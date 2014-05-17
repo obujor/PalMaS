@@ -337,7 +337,7 @@ PREFIX osr: <http://dati.senato.it/osr/>
 SELECT DISTINCT ?idddl  ?iterddl ?minDataPresentazione (?dataStato AS ?maxDataStato) ?stato
 {
 
-?iterddl osr:idDdl ?idddl.
+?iterddl a osr:IterDdl; osr:idDdl ?idddl.
 
 {
 SELECT DISTINCT ?idddl (MIN(?dataPresentazione) AS ?minDataPresentazione)
@@ -371,4 +371,3 @@ FILTER (REGEX(?stato,'approvato definitivamente','i')).
 }
 
 ORDER BY ?idddl
-
