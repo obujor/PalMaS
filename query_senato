@@ -329,3 +329,46 @@ FILTER (?stato IN ("respinto"^^<http://www.w3.org/2001/XMLSchema#string>,
 GROUP BY ?legislatura
 
 
+
+########### DATA INIZIO E FINE PROCEDIMENTI APPROVATI DEFINITIVAMENTE ##########
+
+PREFIX osr: <http://dati.senato.it/osr/>
+
+SELECT DISTINCT ?idddl  ?iterddl ?minDataPresentazione (?dataStato AS ?maxDataStato) ?stato
+{
+
+?iterddl osr:idDdl ?idddl.
+
+{
+SELECT DISTINCT ?idddl (MIN(?dataPresentazione) AS ?minDataPresentazione)
+{
+?ddl osr:dataPresentazione ?dataPresentazione; osr:idDdl ?idddl.
+}
+}
+
+
+{
+SELECT DISTINCT ?idddl ?dataStato ?stato
+{
+
+?ddl osr:dataStatoDdl ?dataStato; osr:idDdl ?idddl; osr:statoDdl ?stato.
+
+{  SELECT ?idddl2 (MAX(?dataStato2) AS ?maxDataStato)
+     WHERE
+     {  
+?ddl2 osr:dataStatoDdl ?dataStato2; osr:idDdl ?idddl2
+} GROUP BY ?idddl2
+}
+
+FILTER (?dataStato = ?maxDataStato AND ?idddl = ?idddl2).
+
+FILTER (REGEX(?stato,'approvato definitivamente','i')).
+
+}
+}
+
+
+}
+
+ORDER BY ?idddl
+
