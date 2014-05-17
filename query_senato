@@ -431,3 +431,59 @@ FILTER (REGEX(?finalstato,'approvato definitivamente','i')).
 
 }
 ORDER BY ?legislatura
+
+
+
+############## IDDDL STRALCIO ######################
+
+PREFIX osr: <http://dati.senato.it/osr/>
+
+SELECT  DISTINCT ?idddl ?legislatura ?stato ?finalidddl ?finalddl
+{
+?ddl a osr:Ddl; osr:statoDdl ?stato; osr:legislatura ?legislatura; osr:idDdl ?idddl.
+
+FILTER (REGEX(?stato,'conclusione anomala per stralcio','i')).
+
+?iterddl a osr:IterDdl; osr:assorbimento ?ddl;osr:fase ?faseiter.
+
+?faseiter a osr:FaseIter; osr:ddl ?finalddl.
+
+?finalddl osr:idDdl ?finalidddl.
+
+
+}
+ORDER BY ?finalidddl
+
+
+
+
+############### NUMERO IDDDL ASSORBITI APPROVATI DEFINITIVAMENTE ###################
+PREFIX osr: <http://dati.senato.it/osr/>
+
+SELECT  DISTINCT  ?legislatura (COUNT(DISTINCT ?idddl) AS ?assorbitiApprovatiDefinitivamente)
+{
+?ddl a osr:Ddl; osr:statoDdl ?stato;osr:dataStatoDdl ?dataStato; osr:legislatura ?legislatura; osr:idDdl ?idddl.
+
+FILTER (REGEX(?stato,'assorbito','i')).
+
+?iterddl a osr:IterDdl; osr:assorbimento ?ddl;osr:fase ?faseiter.
+
+?faseiter a osr:FaseIter; osr:ddl ?finalddl.
+
+?finalddl a osr:Ddl; osr:idDdl ?finalidddl; osr:statoDdl ?finalstato; osr:dataStatoDdl ?finaldataStato; osr:idDdl ?finalidddl.
+
+
+{  SELECT ?finalidddl (MAX(?dataStato2) AS ?maxDataStato)
+     WHERE
+     {  
+?ddl2 osr:dataStatoDdl ?dataStato2; osr:idDdl ?finalidddl
+} 
+}
+
+
+FILTER (?finaldataStato = ?maxDataStato).
+
+FILTER (REGEX(?finalstato,'approvato definitivamente','i')).
+
+}
+ORDER BY ?legislatura
