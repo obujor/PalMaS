@@ -29,6 +29,8 @@ d3.json("json/data.json", function(error, root) {
     .enter().append("circle")
       .attr("class", function(d) { return d.parent ? d.children ? "node" : "node node--leaf" : "node node--root"; })
       .style("fill", function(d) { return d.color ? d.color : d.children ? color(d.depth) : null; })
+      .style("stroke", function(d) { return d.stroke ? d.stroke : null; })
+      .style("stroke-width", function(d) { return d.stroke ? 1.5 : null; })
       .on("click", function(d) { if (focus !== d) zoom(d), d3.event.stopPropagation(); });
 
   var text = svg.selectAll("text")
