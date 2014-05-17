@@ -220,6 +220,9 @@ GROUP BY ?iterddl ?stato
 PREFIX osr: <http://dati.senato.it/osr/>
 
 
+################## ITER DDL NUM FASI E ULTIMO STATO APPROVATO ##########################
+
+PREFIX osr: <http://dati.senato.it/osr/>
 
 
 SELECT DISTINCT ?iterddl  (COUNT(DISTINCT ?faseiter) AS ?numFasi)  (MAX(?dataStato) AS ?ds) ?stato
@@ -231,20 +234,44 @@ SELECT DISTINCT ?iterddl  (COUNT(DISTINCT ?faseiter) AS ?numFasi)  (MAX(?dataSta
 ?ddl osr:dataStatoDdl ?dataStato.
 
 
-{  SELECT ?ddl (MAX(?dataStato2) AS ?maxDataStato)
+{  SELECT ?idddl (MAX(?dataStato2) AS ?maxDataStato)
      WHERE
      {  
-?ddl osr:dataStatoDdl ?dataStato2.
-} GROUP BY ?ddl
+?ddl2 osr:dataStatoDdl ?dataStato2; osr:idDdl ?idddl
+} GROUP BY ?idddl
 }
 
 FILTER (?dataStato = ?maxDataStato).
+
+#FILTER (REGEX(?stato, 'approvato', 'i')).
 
 
 ?ddl osr:statoDdl ?stato; osr:titolo ?titolo.
 }
 GROUP BY ?iterddl ?stato
+HAVING ?stato = 'approvato'
 
 
+#################### LEGISLATURA IDDL ULTIMO STATO APPROVATO DEFINITIVAMENTE ###################
+
+PREFIX osr: <http://dati.senato.it/osr/>
 
 
+SELECT DISTINCT ?legislatura ?idddl ?dataStato ?stato
+{
+
+?ddl osr:dataStatoDdl ?dataStato; osr:idDdl ?idddl; osr:statoDdl ?stato; osr:legislatura ?legislatura
+
+{  SELECT ?idddl2 (MAX(?dataStato2) AS ?maxDataStato)
+     WHERE
+     {  
+?ddl2 osr:dataStatoDdl ?dataStato2; osr:idDdl ?idddl2
+} GROUP BY ?idddl2
+}
+
+FILTER (?dataStato = ?maxDataStato AND ?idddl = ?idddl2).
+
+FILTER (REGEX(?stato,'approvato definitivamente','i')).
+
+}
+ORDER BY ?legislatura ?dataStato ?idddl
