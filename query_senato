@@ -107,3 +107,32 @@ WHERE
     OPTIONAL { ?ddl osr:testoApprovato ?testoApprovato }
 }
 ORDER BY ASC(?dataPresentazione)
+
+
+
+################ NUMERO DI DDL CONCLUSI RIFIUTATI PER LEGISLATURA ############################
+
+PREFIX osr: <http://dati.senato.it/osr/>
+
+SELECT  DISTINCT ?legislatura COUNT(DISTINCT ?ddl)
+{
+?ddl a osr:Ddl; osr:statoDdl ?stato; osr:legislatura ?legislatura.
+
+FILTER(
+?stato IN (
+"assegnato (non ancora iniziato l'esame)"^^<http://www.w3.org/2001/XMLSchema#string>,
+"da assegnare"^^<http://www.w3.org/2001/XMLSchema#string>,
+"rinviato dall'assemblea in commissione"^^<http://www.w3.org/2001/XMLSchema#string>,
+"concluso l'esame da parte della commissione"^^<http://www.w3.org/2001/XMLSchema#string>,
+"all'esame dell'assemblea"^^<http://www.w3.org/2001/XMLSchema#string>,
+"in stato di relazione"^^<http://www.w3.org/2001/XMLSchema#string>,
+"rimesso all'Assemblea"^^<http://www.w3.org/2001/XMLSchema#string>,
+"restituito al Governo per essere ripresentato all'altro ramo"^^<http://www.w3.org/2001/XMLSchema#string>,
+"rinviato alle Camere dal Presidente della Repubblica"^^<http://www.w3.org/2001/XMLSchema#string>
+))
+}
+GROUP BY ?legislatura
+ORDER BY ?legislatura
+
+
+
