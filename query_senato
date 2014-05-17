@@ -80,3 +80,30 @@ WHERE
     ?fase osr:dataStatoDdl ?dataStato.
     FILTER (?legislatura = 17 || ?legislatura = 16)
 } ORDER BY ?progrIter
+
+# DDL presentati durante la 17esima legislatura in ordine ascendente di presentazione
+PREFIX osr: <http://dati.senato.it/osr/>
+
+SELECT DISTINCT ?ddl ?idFase ?ramo ?legislatura ?numeroFase ?titolo
+?titoloBreve ?natura ?stato ?dataStato ?dataPresentazione
+?presentatoTrasmesso ?testoPresentato ?testoApprovato
+WHERE
+{
+    ?ddl a osr:Ddl.
+    ?ddl osr:idFase ?idFase.
+    ?ddl osr:statoDdl ?stato.
+    ?ddl osr:ramo ?ramo.
+    ?ddl osr:dataPresentazione ?dataPresentazione.
+    ?ddl osr:titolo ?titolo.
+    OPTIONAL { ?ddl osr:titoloBreve ?titoloBreve }.
+    ?ddl osr:presentatoTrasmesso ?presentatoTrasmesso.
+    ?ddl osr:natura ?natura.
+    ?ddl osr:dataStatoDdl ?dataStato.
+    ?ddl osr:numeroFase ?numeroFase.
+    ?ddl osr:numeroFaseCompatto ?numeroFaseCompatto.
+    ?ddl osr:legislatura ?legislatura.
+    ?ddl osr:legislatura 17 .
+    OPTIONAL { ?ddl osr:testoPresentato ?testoPresentato }
+    OPTIONAL { ?ddl osr:testoApprovato ?testoApprovato }
+}
+ORDER BY ASC(?dataPresentazione)
