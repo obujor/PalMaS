@@ -1,0 +1,23 @@
+REFIX ocd: <http://dati.camera.it/ocd/>
+
+SELECT DISTINCT ?property
+WHERE
+{
+    ?atto a ocd:intervento;
+    ?property ?o.
+}
+
+select distinct ?t where {?s a ocd:statoIter; dc:type ?t} LIMIT 100
+
+
+
+select distinct ?id ?iniziativa ?rif_leg ?date ?title ?type where {
+?atto a ocd:atto.
+?atto dc:identifier ?id.
+?atto dc:date ?date.
+?atto dc:type ?type.
+?atto dc:title ?title.
+?atto ocd:iniziativa ?iniziativa. 
+?atto ocd:rif_leg ?rif_leg.
+FILTER(?rif_leg = <http://dati.camera.it/ocd/legislatura.rdf/repubblica_17> || ?rif_leg = <http://dati.camera.it/ocd/legislatura.rdf/repubblica_16>)
+}
