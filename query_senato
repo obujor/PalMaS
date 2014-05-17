@@ -162,7 +162,7 @@ FILTER(
 "decreto legge decaduto"^^<http://www.w3.org/2001/XMLSchema#string>,
 "respinto"^^<http://www.w3.org/2001/XMLSchema#string>,
 "ritirato"^^<http://www.w3.org/2001/XMLSchema#string>,
-"verificata insussistenza del quorum"^^<http://www.w3.org/2001/XMLSchema#string>
+"verificata insussistenza del quorum"^^<http://www.w3.org/2001/XMLSchema#string>,
 "conclusione anomala per stralcio"^^<http://www.w3.org/2001/XMLSchema#string>
 ))
 }
@@ -326,7 +326,8 @@ FILTER (?dataStato = ?maxDataStato AND ?idddl = ?idddl2).
 FILTER (?stato IN ("respinto"^^<http://www.w3.org/2001/XMLSchema#string>,
 "ritirato"^^<http://www.w3.org/2001/XMLSchema#string>,
 "decreto legge decaduto"^^<http://www.w3.org/2001/XMLSchema#string>,
-"cancellato dall'Ordine del Giorno"^^<http://www.w3.org/2001/XMLSchema#string>
+"cancellato dall'Ordine del Giorno"^^<http://www.w3.org/2001/XMLSchema#string>,
+"conclusione anomala per stralcio"^^<http://www.w3.org/2001/XMLSchema#string>
 )).
 
 }
