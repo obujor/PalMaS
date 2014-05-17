@@ -375,3 +375,25 @@ FILTER (REGEX(?stato,'approvato definitivamente','i')).
 }
 
 ORDER BY ?idddl
+
+
+
+############## IDDDL ASSORBITI ######################
+
+PREFIX osr: <http://dati.senato.it/osr/>
+
+SELECT  DISTINCT ?idddl ?legislatura ?stato ?finalidddl ?finalddl
+{
+?ddl a osr:Ddl; osr:statoDdl ?stato; osr:legislatura ?legislatura; osr:idDdl ?idddl.
+
+FILTER (REGEX(?stato,'assorbito','i')).
+
+?iterddl a osr:IterDdl; osr:assorbimento ?ddl;osr:fase ?faseiter.
+
+?faseiter a osr:FaseIter; osr:ddl ?finalddl.
+
+?finalddl osr:idDdl ?finalidddl.
+
+
+}
+ORDER BY ?finalidddl
