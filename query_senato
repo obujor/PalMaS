@@ -305,7 +305,7 @@ GROUP BY ?legislatura
 PREFIX osr: <http://dati.senato.it/osr/>
 
 
-SELECT  ?legislatura (COUNT(DISTINCT ?idddl) AS ?numApprovatiDefinitivamente)
+SELECT  ?legislatura (COUNT(DISTINCT ?idddl) AS ?numRespinti)
 {
 
 ?ddl osr:dataStatoDdl ?dataStato; osr:idDdl ?idddl; osr:statoDdl ?stato; osr:legislatura ?legislatura
@@ -323,7 +323,7 @@ FILTER (?stato IN ("respinto"^^<http://www.w3.org/2001/XMLSchema#string>,
 "ritirato"^^<http://www.w3.org/2001/XMLSchema#string>,
 "decreto legge decaduto"^^<http://www.w3.org/2001/XMLSchema#string>,
 "cancellato dall'Ordine del Giorno"^^<http://www.w3.org/2001/XMLSchema#string>
-).
+)).
 
 }
 GROUP BY ?legislatura
