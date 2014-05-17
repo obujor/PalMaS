@@ -300,3 +300,32 @@ FILTER (REGEX(?stato,'approvato definitivamente','i')).
 }
 GROUP BY ?legislatura
 
+
+############## LEGISLATURA IDDL NUMERO RESPINTI ################
+PREFIX osr: <http://dati.senato.it/osr/>
+
+
+SELECT  ?legislatura (COUNT(DISTINCT ?idddl) AS ?numApprovatiDefinitivamente)
+{
+
+?ddl osr:dataStatoDdl ?dataStato; osr:idDdl ?idddl; osr:statoDdl ?stato; osr:legislatura ?legislatura
+
+{  SELECT ?idddl2 (MAX(?dataStato2) AS ?maxDataStato)
+     WHERE
+     {  
+?ddl2 osr:dataStatoDdl ?dataStato2; osr:idDdl ?idddl2
+} GROUP BY ?idddl2
+}
+
+FILTER (?dataStato = ?maxDataStato AND ?idddl = ?idddl2).
+
+FILTER (?stato IN ("respinto"^^<http://www.w3.org/2001/XMLSchema#string>,
+"ritirato"^^<http://www.w3.org/2001/XMLSchema#string>,
+"decreto legge decaduto"^^<http://www.w3.org/2001/XMLSchema#string>,
+"cancellato dall'Ordine del Giorno"^^<http://www.w3.org/2001/XMLSchema#string>
+).
+
+}
+GROUP BY ?legislatura
+
+
