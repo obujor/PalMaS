@@ -188,3 +188,24 @@ FILTER (REGEX(?stato,'assorbito','i')).
 
 }
 LIMIT 10
+
+
+################## ITER DDL NUM FASI E ULTIMO STATO ##########################
+
+PREFIX osr: <http://dati.senato.it/osr/>
+
+SELECT DISTINCT ?iterddl  (COUNT(DISTINCT ?faseiter) AS ?numFasi)  (MAX(?dataStato) AS ?ds) ?stato
+{
+?iterddl a osr:IterDdl; osr:idDdl ?idddl;osr:fase ?faseiter.
+
+?faseiter osr:ddl ?ddl.
+
+?ddl osr:dataStatoDdl ?dataStato.
+
+
+{  SELECT ?ddl (MAX(?dataStato2) AS ?maxDataStato)
+     WHERE
+     {  
+?ddl osr:dataStatoDdl ?dataStato2.
+} GROUP BY ?ddl
+}
