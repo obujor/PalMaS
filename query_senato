@@ -110,7 +110,7 @@ ORDER BY ASC(?dataPresentazione)
 
 
 
-################ NUMERO DI DDL CONCLUSI RIFIUTATI PER LEGISLATURA ############################
+################ NUMERO DI DDL NON CONCLUSI PER LEGISLATURA ############################
 
 PREFIX osr: <http://dati.senato.it/osr/>
 
