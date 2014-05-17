@@ -1,0 +1,82 @@
+PREFIX osr: <http://dati.senato.it/osr/>
+
+SELECT DISTINCT ?idDdl ?progrIter ?fase ?ramo ?numeroFase ?stato ?dataStato
+WHERE
+{
+    ?ddl a osr:Ddl.
+    ?ddl osr:idDdl ?idDdl.
+?ddl osr:dataPresentazione ?dataPresentazione.
+    ?iter a osr:IterDdl.
+    ?iter osr:idDdl ?idDdl.
+    ?iter osr:fase ?faseIter.
+    ?faseIter osr:ddl ?fase.
+    ?faseIter osr:progrIter ?progrIter.
+    ?fase osr:ramo ?ramo.
+    ?fase osr:numeroFase ?numeroFase.
+    ?fase osr:statoDdl ?stato.
+    ?fase osr:dataStatoDdl ?dataStato.
+    FILTER(xsd:date(str(?dataPresentazione)) <= xsd:date(str("2014-05-16")))
+    FILTER(xsd:date(str(?dataPresentazione)) >= xsd:date(str("2013-03-15")))
+} ORDER BY ?progrIter
+
+
+PREFIX osr: <http://dati.senato.it/osr/>
+
+SELECT ?idDdl (COUNT(?fase) AS ?no_fase)
+WHERE
+{
+    ?ddl a osr:Ddl.
+    ?ddl osr:idDdl ?idDdl.
+?ddl osr:dataPresentazione ?dataPresentazione.
+    ?iter a osr:IterDdl.
+    ?iter osr:idDdl ?idDdl.
+    ?iter osr:fase ?faseIter.
+    ?faseIter osr:ddl ?fase.
+    ?faseIter osr:progrIter ?progrIter.
+    ?fase osr:ramo ?ramo.
+    ?fase osr:numeroFase ?numeroFase.
+    ?fase osr:statoDdl ?stato.
+    ?fase osr:dataStatoDdl ?dataStato.
+    FILTER(xsd:date(str(?dataPresentazione)) <= xsd:date(str("2014-05-16")))
+    FILTER(xsd:date(str(?dataPresentazione)) >= xsd:date(str("2013-03-15")))
+} 
+GROUP BY ?idDdl
+ORDER BY ?no_fase
+
+PREFIX osr: <http://dati.senato.it/osr/>
+
+SELECT DISTINCT ?progrIter ?fase ?ramo ?numeroFase ?stato ?dataStato ?legislatura
+WHERE
+{
+    ?ddl a osr:Ddl.
+    ?ddl osr:idDdl ?idDdl.
+    ?ddl osr:legislatura ?legislatura .
+    ?iter a osr:IterDdl.
+    ?iter osr:idDdl ?idDdl.
+    ?iter osr:fase ?faseIter.
+    ?faseIter osr:ddl ?fase.
+    ?faseIter osr:progrIter ?progrIter.
+    ?fase osr:ramo ?ramo.
+    ?fase osr:numeroFase ?numeroFase.
+    ?fase osr:statoDdl ?stato.
+    ?fase osr:dataStatoDdl ?dataStato.
+    FILTER (?legislatura = 17 || ?legislatura = 16)
+} ORDER BY ?progrIter
+
+SELECT DISTINCT ?progrIter ?fase ?ramo ?numeroFase ?stato ?dataStato ?legislatura
+WHERE
+{
+    ?ddl a osr:Ddl.
+    ?ddl osr:idDdl ?idDdl.
+    ?ddl osr:legislatura ?legislatura .
+    ?iter a osr:IterDdl.
+    ?iter osr:idDdl ?idDdl.
+    ?iter osr:fase ?faseIter.
+    ?faseIter osr:ddl ?fase.
+    ?faseIter osr:progrIter ?progrIter.
+    ?fase osr:ramo ?ramo.
+    ?fase osr:numeroFase ?numeroFase.
+    ?fase osr:statoDdl ?stato.
+    ?fase osr:dataStatoDdl ?dataStato.
+    FILTER (?legislatura = 17 || ?legislatura = 16)
+} ORDER BY ?progrIter
