@@ -134,5 +134,17 @@ FILTER(
 GROUP BY ?legislatura
 ORDER BY ?legislatura
 
+###################### NUMERO DI DDL APPROVATI PER LEGISLATURA ###########################
 
+PREFIX osr: <http://dati.senato.it/osr/>
+ 
+ 
+SELECT  ?legislatura COUNT(DISTINCT ?ddl) 
+{
+?ddl a osr:Ddl; osr:statoDdl ?stato.
+?ddl osr:legislatura ?legislatura
+FILTER regex(?stato,'approvato','i')
+}
+GROUP BY ?legislatura
+ORDER BY ?legislatura
 
