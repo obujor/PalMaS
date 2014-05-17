@@ -167,3 +167,24 @@ FILTER(
 }
 GROUP BY ?legislatura
 ORDER BY ?legislatura
+
+
+############## DDL ASSORBITI ######################
+
+PREFIX osr: <http://dati.senato.it/osr/>
+
+SELECT  DISTINCT ?ddl ?legislatura ?stato ?finalddl ?finaltitolo
+{
+?ddl a osr:Ddl; osr:statoDdl ?stato; osr:legislatura ?legislatura.
+
+FILTER (REGEX(?stato,'assorbito','i')).
+
+?iterddl a osr:IterDdl; osr:assorbimento ?ddl;osr:fase ?faseiter.
+
+
+?faseiter a osr:FaseIter; osr:ddl ?finalddl.
+
+?finalddl osr:titolo ?finaltitolo
+
+}
+LIMIT 10
