@@ -148,3 +148,22 @@ FILTER regex(?stato,'approvato','i')
 GROUP BY ?legislatura
 ORDER BY ?legislatura
 
+
+##################### NUMERO DI DDL CONCLUSI RIFIUTATI PER LEGISLATURA ##################
+PREFIX osr: <http://dati.senato.it/osr/>
+
+SELECT  DISTINCT ?legislatura COUNT(DISTINCT ?ddl)
+{
+?ddl a osr:Ddl; osr:statoDdl ?stato; osr:legislatura ?legislatura.
+
+FILTER(
+?stato IN (
+"cancellato dall'Ordine del Giorno"^^<http://www.w3.org/2001/XMLSchema#string>,
+"decreto legge decaduto"^^<http://www.w3.org/2001/XMLSchema#string>,
+"respinto"^^<http://www.w3.org/2001/XMLSchema#string>,
+"ritirato"^^<http://www.w3.org/2001/XMLSchema#string>,
+"verificata insussistenza del quorum"^^<http://www.w3.org/2001/XMLSchema#string>
+))
+}
+GROUP BY ?legislatura
+ORDER BY ?legislatura
