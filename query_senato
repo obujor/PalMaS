@@ -330,20 +330,21 @@ GROUP BY ?legislatura
 
 
 
-########### DATA INIZIO E FINE PROCEDIMENTI APPROVATI DEFINITIVAMENTE ##########
+########### DATA INIZIO E FINE E MINIMO LEGISLATURA PROCEDIMENTI APPROVATI DEFINITIVAMENTE ##########
 
 PREFIX osr: <http://dati.senato.it/osr/>
 
-SELECT DISTINCT ?idddl  ?iterddl ?minDataPresentazione (?dataStato AS ?maxDataStato) ?stato
+SELECT DISTINCT ?idddl  ?iterddl ?minLegislatura ?minDataPresentazione (?dataStato AS ?maxDataStato) ?stato
 {
 
 ?iterddl a osr:IterDdl; osr:idDdl ?idddl.
 
 {
-SELECT DISTINCT ?idddl (MIN(?dataPresentazione) AS ?minDataPresentazione)
+SELECT DISTINCT ?idddl (MIN(?legislatura) AS ?minLegislatura) (MIN(?dataPresentazione) AS ?minDataPresentazione)
 {
-?ddl osr:dataPresentazione ?dataPresentazione; osr:idDdl ?idddl.
+?ddl osr:dataPresentazione ?dataPresentazione; osr:idDdl ?idddl; osr:legislatura ?legislatura.
 }
+GROUP BY ?idddl
 }
 
 
@@ -353,14 +354,14 @@ SELECT DISTINCT ?idddl ?dataStato ?stato
 
 ?ddl osr:dataStatoDdl ?dataStato; osr:idDdl ?idddl; osr:statoDdl ?stato.
 
-{  SELECT ?idddl2 (MAX(?dataStato2) AS ?maxDataStato)
+{  SELECT ?idddl (MAX(?dataStato2) AS ?maxDataStato)
      WHERE
      {  
-?ddl2 osr:dataStatoDdl ?dataStato2; osr:idDdl ?idddl2
-} GROUP BY ?idddl2
+?ddl2 osr:dataStatoDdl ?dataStato2; osr:idDdl ?idddl
+} GROUP BY ?idddl
 }
 
-FILTER (?dataStato = ?maxDataStato AND ?idddl = ?idddl2).
+FILTER (?dataStato = ?maxDataStato).
 
 FILTER (REGEX(?stato,'approvato definitivamente','i')).
 
