@@ -438,7 +438,7 @@ ORDER BY ?legislatura
 ############### NUMERO IDDDL ASSORBITI RESPINTI ###############
 PREFIX osr: <http://dati.senato.it/osr/>
 
-SELECT  DISTINCT  ?legislatura (COUNT(DISTINCT ?idddl) AS ?assorbitiApprovatiDefinitivamente)
+SELECT  DISTINCT  ?legislatura (COUNT(DISTINCT ?idddl) AS ?assorbitiRespinti)
 {
 ?ddl a osr:Ddl; osr:statoDdl ?stato;osr:dataStatoDdl ?dataStato; osr:legislatura ?legislatura; osr:idDdl ?idddl.
 
