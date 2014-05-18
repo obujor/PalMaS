@@ -559,3 +559,62 @@ FILTER (?legislatura = 13).
 }
 ORDER BY ?legislatura ?dataStato ?idddl
 
+
+################## CLASSIFICAZIONE TESEO SOLO A LIVELLO DI INTERO ATTO PER APPROVATI ################
+PREFIX osr: <http://dati.senato.it/osr/>
+
+
+SELECT DISTINCT ?legislatura ?idddl ?dataStato ?stato ?teseo 
+{
+
+?ddl osr:dataStatoDdl ?dataStato; osr:idDdl ?idddl; osr:statoDdl ?stato; osr:legislatura ?legislatura; osr:titolo ?titolo; osr:classificazione ?rif_teseo.
+?rif_teseo dcterms:subject ?steseo;osr:livello ?livello_teseo.
+?steseo skos:prefLabel ?teseo.
+
+FILTER(?livello_teseo = "Generale"^^<http://www.w3.org/2001/XMLSchema#string>).
+
+{  SELECT ?idddl (MAX(?dataStato2) AS ?maxDataStato)
+     WHERE
+     {  
+?ddl2 osr:dataStatoDdl ?dataStato2; osr:idDdl ?idddl
+} 
+}
+
+FILTER (?dataStato = ?maxDataStato).
+
+FILTER (REGEX(?stato,'approvato definitivamente','i')).
+
+}
+ORDER BY ?legislatura ?dataStato ?idddl
+
+################## CLASSIFICAZIONE TESEO SOLO A LIVELLO DI INTERO ATTO PER RESPINTI ################
+PREFIX osr: <http://dati.senato.it/osr/>
+
+
+SELECT DISTINCT ?legislatura ?idddl ?dataStato ?stato ?teseo 
+{
+
+?ddl osr:dataStatoDdl ?dataStato; osr:idDdl ?idddl; osr:statoDdl ?stato; osr:legislatura ?legislatura; osr:titolo ?titolo; osr:classificazione ?rif_teseo.
+?rif_teseo dcterms:subject ?steseo;osr:livello ?livello_teseo.
+?steseo skos:prefLabel ?teseo.
+
+FILTER(?livello_teseo = "Generale"^^<http://www.w3.org/2001/XMLSchema#string>).
+
+{  SELECT ?idddl (MAX(?dataStato2) AS ?maxDataStato)
+     WHERE
+     {  
+?ddl2 osr:dataStatoDdl ?dataStato2; osr:idDdl ?idddl
+} 
+}
+
+FILTER (?dataStato = ?maxDataStato).
+
+FILTER (?stato IN ("respinto"^^<http://www.w3.org/2001/XMLSchema#string>,
+"ritirato"^^<http://www.w3.org/2001/XMLSchema#string>,
+"decreto legge decaduto"^^<http://www.w3.org/2001/XMLSchema#string>,
+"cancellato dall'Ordine del Giorno"^^<http://www.w3.org/2001/XMLSchema#string>,
+"conclusione anomala per stralcio"^^<http://www.w3.org/2001/XMLSchema#string>
+)).
+}
+ORDER BY ?legislatura ?dataStato ?idddl
+
