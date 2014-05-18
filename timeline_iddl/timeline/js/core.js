@@ -1,5 +1,5 @@
 // "jsonFile" name is by convention
-var jsonFile = "timeline/divertimento_e_ristoro_-_timeline.json";
+var jsonFile = "timeline/iddl_approvati.json";
 
 // "visualize(data)" function signature is by convention
 function visualize(data) {

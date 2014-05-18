@@ -24,19 +24,6 @@ var menuItemsMap = {
 	'google_timeline': 'Timeline Chart (Google)',
 	'multidimensional_timeline': 'MultiDimensional<br/>Interactive Timeline'	
 };
-function createMenuItems() {
-  var menu_li = document.getElementById('menu_li');
-  
-  var html = "";
-  var hrefs = Object.keys(menuItemsMap);
-  for (var h in hrefs) {
-    var href = hrefs[h];
-    htmlValue = menuItemsMap[href];
-    html += "<a class='menu_href' href='"+href+".html'>"+htmlValue+"</a>";
-  }
-  menu_li.innerHTML = html;
-}
-createMenuItems();
 
 /*
  * localization zone
@@ -62,8 +49,8 @@ function setTranslateLabels(language,labelsMap) {
 	    	applyLabels(labelsMap['default']);
 	    }
 	    
-	  	document.getElementById("about").innerHTML = "About";
-	    jQuery("#about").html("About");
+	  	//document.getElementById("about").innerHTML = "About";
+	    //jQuery("#about").html("About");
 	    break;
 	}
 }
