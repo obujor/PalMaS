@@ -23,7 +23,7 @@ FILTER(?rif_leg = <http://dati.camera.it/ocd/legislatura.rdf/repubblica_17> || ?
 }
 
 
-######################## ASSORBIMENTO CAMERA ######################
+######################## ASSORBIMENTO CAMERA XVI ######################
 
 select distinct ?id_atto ?id_atto_portante  where {
 
@@ -33,6 +33,21 @@ select distinct ?id_atto ?id_atto_portante  where {
 ?abb ocd:rif_attoCamera ?atto.
 ?atto dc:identifier ?id_atto.
 ?atto_portante dc:identifier ?id_atto_portante; ocd:rif_leg <http://dati.camera.it/ocd/legislatura.rdf/repubblica_16>.
+FILTER(?id_atto != ?id_atto_portante).
+}
+ORDER BY ?id_atto_portante
+
+
+######################## ASSORBIMENTO CAMERA XVII ######################
+
+select distinct ?id_atto ?id_atto_portante  where {
+
+#?atto a ocd:atto; ocd:rif_abbinamento ?abb.
+
+?abb  a ocd:abbinamento; ocd:attoPortante ?atto_portante.
+?abb ocd:rif_attoCamera ?atto.
+?atto dc:identifier ?id_atto.
+?atto_portante dc:identifier ?id_atto_portante; ocd:rif_leg <http://dati.camera.it/ocd/legislatura.rdf/repubblica_17>.
 FILTER(?id_atto != ?id_atto_portante).
 }
 ORDER BY ?id_atto_portante
