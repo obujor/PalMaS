@@ -290,20 +290,52 @@ SELECT  ?legislatura (COUNT(DISTINCT ?idddl) AS ?numApprovatiDefinitivamente)
 
 ?ddl osr:dataStatoDdl ?dataStato; osr:idDdl ?idddl; osr:statoDdl ?stato; osr:legislatura ?legislatura
 
-{  SELECT ?idddl2 (MAX(?dataStato2) AS ?maxDataStato)
+{  SELECT ?idddl (MAX(?dataStato2) AS ?maxDataStato)
      WHERE
      {  
-?ddl2 osr:dataStatoDdl ?dataStato2; osr:idDdl ?idddl2
-} GROUP BY ?idddl2
+?ddl2 osr:dataStatoDdl ?dataStato2; osr:idDdl ?idddl
+} 
 }
 
-FILTER (?dataStato = ?maxDataStato AND ?idddl = ?idddl2).
+FILTER (?dataStato = ?maxDataStato).
 
 FILTER (REGEX(?stato,'approvato definitivamente','i')).
 
 }
 GROUP BY ?legislatura
 
+
+######################## LEGISLATURA NUMERO IDDDL APPALTI APPROVATI CON NUMERO FASI ####################
+
+PREFIX osr: <http://dati.senato.it/osr/>
+
+
+
+SELECT  ?legislatura (COUNT(DISTINCT ?idddl) AS ?numApprovatiDefinitivamente) (AVG(?numFasi) AS ?numFasiAvg) (MAX(?numFasi) AS ?numFasiMax)
+{
+
+?ddl osr:dataStatoDdl ?dataStato; osr:idDdl ?idddl; osr:statoDdl ?stato; osr:legislatura ?legislatura
+
+{  SELECT ?idddl (MAX(?dataStato2) AS ?maxDataStato)
+     WHERE
+     {  
+?ddl2 osr:dataStatoDdl ?dataStato2; osr:idDdl ?idddl
+} 
+}
+
+{  SELECT ?idddl (COUNT(DISTINCT ?faseIter) AS ?numFasi)
+     WHERE
+     {  
+?iterDdl a osr:IterDdl; osr:idDdl ?idddl; osr:fase ?faseIter.
+} 
+}
+
+FILTER (?dataStato = ?maxDataStato).
+
+FILTER (REGEX(?stato,'approvato definitivamente','i')).
+
+}
+ORDER BY ?legislatura
 
 ############## LEGISLATURA IDDL NUMERO RESPINTI ################
 PREFIX osr: <http://dati.senato.it/osr/>
@@ -400,9 +432,6 @@ FILTER (REGEX(?stato,'assorbito','i')).
 }
 ORDER BY ?finalidddl
 
-
-
-
 ############### NUMERO IDDDL ASSORBITI APPROVATI DEFINITIVAMENTE ###################
 PREFIX osr: <http://dati.senato.it/osr/>
 
@@ -475,6 +504,98 @@ FILTER(
 ORDER BY ?legislatura
 
 
+####################  IDDDL APPROVATI IN TESTO UNIFICATO ###################
+
+PREFIX osr: <http://dati.senato.it/osr/>
+
+SELECT  DISTINCT ?idddl ?legislatura ?stato ?finalidddl ?finalddl
+{
+?ddl a osr:Ddl; osr:statoDdl ?stato; osr:legislatura ?legislatura; osr:idDdl ?idddl.
+
+FILTER (REGEX(?stato,'approvato in testo unificato','i')).
+
+?iterddl a osr:IterDdl; osr:testoUnificato ?ddl;osr:fase ?faseiter.
+
+?faseiter a osr:FaseIter; osr:ddl ?finalddl.
+
+?finalddl osr:idDdl ?finalidddl.
+
+
+}
+ORDER BY ?finalidddl
+
+############### NUMERO IDDDL APPROVATI IN TESTO UNIFICATO APPROVATI DEFINITIVAMENTE ###################
+PREFIX osr: <http://dati.senato.it/osr/>
+
+SELECT  DISTINCT  ?legislatura (COUNT(DISTINCT ?idddl) AS ?approvatiTestoUnifApprovatiDefinitivamente)
+{
+?ddl a osr:Ddl; osr:statoDdl ?stato; osr:legislatura ?legislatura; osr:idDdl ?idddl.
+
+FILTER (REGEX(?stato,'approvato in testo unificato','i')).
+
+?iterddl a osr:IterDdl; osr:testoUnificato ?ddl;osr:fase ?faseiter.
+
+?faseiter a osr:FaseIter; osr:ddl ?finalddl.
+
+?finalddl osr:idDdl ?finalidddl.
+
+?finalddl a osr:Ddl; osr:idDdl ?finalidddl; osr:statoDdl ?finalstato; osr:dataStatoDdl ?finaldataStato; osr:idDdl ?finalidddl.
+
+
+{  SELECT ?finalidddl (MAX(?dataStato2) AS ?maxDataStato)
+     WHERE
+     {  
+?ddl2 osr:dataStatoDdl ?dataStato2; osr:idDdl ?finalidddl
+} 
+}
+
+
+FILTER (?finaldataStato = ?maxDataStato).
+
+FILTER (REGEX(?finalstato,'approvato definitivamente','i')).
+
+}
+ORDER BY ?legislatura
+
+
+############### NUMERO IDDDL APPROVATI IN TESTO UNIFICATO RESPINTI ###############
+PREFIX osr: <http://dati.senato.it/osr/>
+
+SELECT  DISTINCT  ?legislatura (COUNT(DISTINCT ?idddl) AS ?approvatiTestoUnifRespinti)
+{
+?ddl a osr:Ddl; osr:statoDdl ?stato; osr:legislatura ?legislatura; osr:idDdl ?idddl.
+
+FILTER (REGEX(?stato,'approvato in testo unificato','i')).
+
+?iterddl a osr:IterDdl; osr:testoUnificato ?ddl;osr:fase ?faseiter.
+
+?faseiter a osr:FaseIter; osr:ddl ?finalddl.
+
+?finalddl a osr:Ddl; osr:idDdl ?finalidddl; osr:statoDdl ?finalstato; osr:dataStatoDdl ?finaldataStato; osr:idDdl ?finalidddl.
+
+{  SELECT ?finalidddl (MAX(?dataStato2) AS ?maxDataStato)
+     WHERE
+     {  
+?ddl2 osr:dataStatoDdl ?dataStato2; osr:idDdl ?finalidddl
+} 
+}
+
+FILTER (?finaldataStato = ?maxDataStato).
+
+FILTER(
+?finalstato IN (
+"cancellato dall'Ordine del Giorno"^^<http://www.w3.org/2001/XMLSchema#string>,
+"decreto legge decaduto"^^<http://www.w3.org/2001/XMLSchema#string>,
+"respinto"^^<http://www.w3.org/2001/XMLSchema#string>,
+"ritirato"^^<http://www.w3.org/2001/XMLSchema#string>,
+"verificata insussistenza del quorum"^^<http://www.w3.org/2001/XMLSchema#string>,
+"conclusione anomala per stralcio"^^<http://www.w3.org/2001/XMLSchema#string>
+))
+
+}
+ORDER BY ?legislatura
+
+
 
 ############## IDDDL STRALCIO ######################
 
@@ -529,3 +650,92 @@ FILTER (REGEX(?finalstato,'approvato definitivamente','i')).
 
 }
 ORDER BY ?legislatura
+
+
+######################## CLASSIFICAZIONI TESEO ##################
+
+PREFIX osr: <http://dati.senato.it/osr/>
+
+
+SELECT DISTINCT ?legislatura ?idddl ?dataStato ?stato ?teseo
+{
+
+?ddl osr:dataStatoDdl ?dataStato; osr:idDdl ?idddl; osr:statoDdl ?stato; osr:legislatura ?legislatura; osr:titolo ?titolo; osr:classificazione ?rif_teseo.
+?rif_teseo dcterms:subject ?steseo.
+?steseo skos:prefLabel ?teseo.
+
+{  SELECT ?idddl (MAX(?dataStato2) AS ?maxDataStato)
+     WHERE
+     {  
+?ddl2 osr:dataStatoDdl ?dataStato2; osr:idDdl ?idddl
+} 
+}
+
+FILTER (?dataStato = ?maxDataStato).
+
+FILTER (REGEX(?stato,'approvato definitivamente','i')).
+
+FILTER (?legislatura = 13).
+
+}
+ORDER BY ?legislatura ?dataStato ?idddl
+
+
+################## CLASSIFICAZIONE TESEO SOLO A LIVELLO DI INTERO ATTO PER APPROVATI ################
+PREFIX osr: <http://dati.senato.it/osr/>
+
+
+SELECT DISTINCT ?legislatura ?idddl ?dataStato ?stato ?teseo 
+{
+
+?ddl osr:dataStatoDdl ?dataStato; osr:idDdl ?idddl; osr:statoDdl ?stato; osr:legislatura ?legislatura; osr:titolo ?titolo; osr:classificazione ?rif_teseo.
+?rif_teseo dcterms:subject ?steseo;osr:livello ?livello_teseo.
+?steseo skos:prefLabel ?teseo.
+
+FILTER(?livello_teseo = "Generale"^^<http://www.w3.org/2001/XMLSchema#string>).
+
+{  SELECT ?idddl (MAX(?dataStato2) AS ?maxDataStato)
+     WHERE
+     {  
+?ddl2 osr:dataStatoDdl ?dataStato2; osr:idDdl ?idddl
+} 
+}
+
+FILTER (?dataStato = ?maxDataStato).
+
+FILTER (REGEX(?stato,'approvato definitivamente','i')).
+
+}
+ORDER BY ?legislatura ?dataStato ?idddl
+
+################## CLASSIFICAZIONE TESEO SOLO A LIVELLO DI INTERO ATTO PER RESPINTI ################
+PREFIX osr: <http://dati.senato.it/osr/>
+
+
+SELECT DISTINCT ?legislatura ?idddl ?dataStato ?stato ?teseo 
+{
+
+?ddl osr:dataStatoDdl ?dataStato; osr:idDdl ?idddl; osr:statoDdl ?stato; osr:legislatura ?legislatura; osr:titolo ?titolo; osr:classificazione ?rif_teseo.
+?rif_teseo dcterms:subject ?steseo;osr:livello ?livello_teseo.
+?steseo skos:prefLabel ?teseo.
+
+FILTER(?livello_teseo = "Generale"^^<http://www.w3.org/2001/XMLSchema#string>).
+
+{  SELECT ?idddl (MAX(?dataStato2) AS ?maxDataStato)
+     WHERE
+     {  
+?ddl2 osr:dataStatoDdl ?dataStato2; osr:idDdl ?idddl
+} 
+}
+
+FILTER (?dataStato = ?maxDataStato).
+
+FILTER (?stato IN ("respinto"^^<http://www.w3.org/2001/XMLSchema#string>,
+"ritirato"^^<http://www.w3.org/2001/XMLSchema#string>,
+"decreto legge decaduto"^^<http://www.w3.org/2001/XMLSchema#string>,
+"cancellato dall'Ordine del Giorno"^^<http://www.w3.org/2001/XMLSchema#string>,
+"conclusione anomala per stralcio"^^<http://www.w3.org/2001/XMLSchema#string>
+)).
+}
+ORDER BY ?legislatura ?dataStato ?idddl
+
