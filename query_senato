@@ -435,6 +435,46 @@ FILTER (REGEX(?finalstato,'approvato definitivamente','i')).
 ORDER BY ?legislatura
 
 
+############### NUMERO IDDDL ASSORBITI RESPINTI ###############
+PREFIX osr: <http://dati.senato.it/osr/>
+
+SELECT  DISTINCT  ?legislatura (COUNT(DISTINCT ?idddl) AS ?assorbitiApprovatiDefinitivamente)
+{
+?ddl a osr:Ddl; osr:statoDdl ?stato;osr:dataStatoDdl ?dataStato; osr:legislatura ?legislatura; osr:idDdl ?idddl.
+
+FILTER (REGEX(?stato,'assorbito','i')).
+
+?iterddl a osr:IterDdl; osr:assorbimento ?ddl;osr:fase ?faseiter.
+
+?faseiter a osr:FaseIter; osr:ddl ?finalddl.
+
+?finalddl a osr:Ddl; osr:idDdl ?finalidddl; osr:statoDdl ?finalstato; osr:dataStatoDdl ?finaldataStato; osr:idDdl ?finalidddl.
+
+
+{  SELECT ?finalidddl (MAX(?dataStato2) AS ?maxDataStato)
+     WHERE
+     {  
+?ddl2 osr:dataStatoDdl ?dataStato2; osr:idDdl ?finalidddl
+} 
+}
+
+
+FILTER (?finaldataStato = ?maxDataStato).
+
+FILTER(
+?finalstato IN (
+"cancellato dall'Ordine del Giorno"^^<http://www.w3.org/2001/XMLSchema#string>,
+"decreto legge decaduto"^^<http://www.w3.org/2001/XMLSchema#string>,
+"respinto"^^<http://www.w3.org/2001/XMLSchema#string>,
+"ritirato"^^<http://www.w3.org/2001/XMLSchema#string>,
+"verificata insussistenza del quorum"^^<http://www.w3.org/2001/XMLSchema#string>,
+"conclusione anomala per stralcio"^^<http://www.w3.org/2001/XMLSchema#string>
+))
+
+}
+ORDER BY ?legislatura
+
+
 
 ############## IDDDL STRALCIO ######################
 
