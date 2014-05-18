@@ -1,6 +1,6 @@
 <html>
 <head>
-	<title>Numero IDDL approvati</title>
+	<title>OpenDataExperiment - OpenHours@PalerMobile</title>
 	
 	<!-- 	to be included always - start -->
 	<link rel="stylesheet" href="http://yui.yahooapis.com/pure/0.4.2/pure-min.css"></link>
@@ -12,6 +12,7 @@
 	<script src="timeline/d3-timeline/lib/d3.js" charset="utf-8"></script>
 	<script src="timeline/d3-timeline/src/d3-timeline.js"></script>
 	
+	<script src="https://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false"></script>
 	<script type="text/javascript" src="js/smoothScrolling.js"></script>
 	<script type="text/javascript" src="js/checkField.js"></script>
 	
@@ -24,7 +25,7 @@
  <div id="layout">
       <div id="main">
 				<div class="header">
-				    <h1>Numero IDDL approvati</h1>
+				    <h1>OpenDataExperiment</h1>
 				    <h3 id="header_h3"></h3>
 				    <h4 id="header_h4"></h4>
 				    <h5 id="header_h5"></h5>
@@ -42,9 +43,15 @@
 	    <div id="name"></div>
 	    <div id="scrolled_date"></div>      
 	  </div>
+	  <div id="map-canvas_timeline"></div>
 	</div>
   
   <script type="text/javascript" src="js/ajaxJsonLoader.js"></script>
+  <script type="text/javascript" src="js/map/palermobile-map.js"></script>
+  <script>
+    var palerMobileMap = new PalerMobileMap("map-canvas_timeline");
+    palerMobileMap.init();
+  </script>
   
   <!-- to be included always - start -->
   <script src="js/core.js"></script>
@@ -53,10 +60,15 @@
 		<!-- localization labels map - start -->  
   <script type="text/javascript">
   	var labelsMap = {
+				it: {
+				  "header_h3": "PalerMobile con D3",
+				  "header_h4": "Timeline Interattiva",
+				  "header_h5": "Grafico a barre orizzontali mostrante l'intervallo di apertura/chiusura dei luoghi di ristoro e divertimento di Palermo.<br/>Il gesture 'click' fornisce una vista geolocalizzata del luogo su una mappa."
+				},
 				'default': {
-					"header_h3": "header h3",
-					"header_h4": "header h4",
-					"header_h5": "header h5"			  
+					"header_h3": "PalerMobile using D3",
+					"header_h4": "Interactive timeline",
+					"header_h5": "Horizontal bar charts showing opening/closing period for amusement/food Palermo's places.<br/>The 'click' gesture provides a geolocalized view on a map."			  
 				}
    }
    setTranslateLabels(getLanguage(),labelsMap);
