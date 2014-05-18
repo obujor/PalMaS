@@ -43,21 +43,6 @@
 
 <p id="chart">
 
-<aside>Drag to rearrange nodes.</aside>
-
-<p class="attribution">Source: <a href="http://www.decc.gov.uk/en/content/cms/tackling/2050/calculator_on/calculator_on.aspx">Department of Energy & Climate Change</a>, <a href="http://tamc.github.com/Sankey/">Tom Counsell</a>.
-
-<aside>Sankey diagrams are closely related to <a href="http://en.wikipedia.org/wiki/Alluvial_diagram">alluvial diagrams</a>, which show how network structure changes over time.</aside>
-
-<p><a href="http://en.wikipedia.org/wiki/Sankey_diagram">Sankey diagrams</a> visualize the magnitude of flow between nodes in a network. This intricate diagram shows a possible scenario for UK energy production and consumption in 2050: energy <b>supplies</b> are on the left, and <b>demands</b> are on the right. Intermediate nodes group related forms of production and show how energy is converted and transmitted before it is consumed (or lost!). The thickness of each link encodes the amount of flow from source to target.
-
-<p>This example is built with <a href="http://d3js.org">D3</a>’s <a href="https://github.com/d3/d3-plugins/tree/master/sankey">Sankey plugin</a>. The plugin takes as input the nodes and weighted links, computing positions via <a href="http://en.wikipedia.org/wiki/Gauss–Seidel_method">iterative relaxation</a>. After fixing the horizontal position of each node, the algorithm starts from the sources on the left, positioning downstream nodes so as to minimize link distance. A reverse pass is then made from right-to-left, and then the entire process is repeated several times. Overlapping nodes are shifted to avoid collision.
-
-<aside>The d3.sankey API is similar to D3’s <a href="http://mbostock.github.com/d3/ex/force.html">force-directed graph</a> layout, which is another type of network visualization.</aside>
-
-<p>The fully automatic layout is convenient for rapid visualization—positioning nodes manually is tedious! However, the algorithm is not perfect; links are drawn with partial transparency to highlight crossings. To improve readability and further disambiguate links, this example also lets you reposition nodes interactively. The algorithm could be improved in the future, say to minimize link crossing or to support loopback in cyclical networks.
-
-<p>Many thanks to Tom Counsell, whose <a href="http://tamc.github.com/Sankey/">Sankey library</a> provided inspiration for this example.
 
 <footer>
   <aside>May 22, 2012</aside>
@@ -70,7 +55,7 @@
 
 var margin = {top: 1, right: 1, bottom: 6, left: 1},
     width = 960 - margin.left - margin.right,
-    height = 1500 - margin.top - margin.bottom;
+    height = 2500 - margin.top - margin.bottom;
 
 var formatNumber = d3.format(",.0f"),
     format = function(d) { return formatNumber(d) + " TWh"; },
