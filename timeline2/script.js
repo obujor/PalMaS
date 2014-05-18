@@ -48,7 +48,7 @@ d3.tsv("data17.tsv", type, function(error, data) {
       .data(data)
       .enter()
       .append("rect")
-      .attr("class", "bar")
+      .attr("class", function(d) { return d.natura; })
       .attr("x", function(d) { return x(d.idddl); })
       .attr("width", x.rangeBand())
       .attr("y", function(d) { return y(d.age); })

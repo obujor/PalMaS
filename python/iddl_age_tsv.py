@@ -45,6 +45,7 @@ if __name__ == '__main__':
     printheader = []
     printheader.append(header[0])
     printheader.append('age')
+    printheader.append('natura')
     c.writerow(printheader)
     
     for row in reader:
@@ -56,9 +57,8 @@ if __name__ == '__main__':
         printrow.append(row[0])
         rateAge = (diff.days)/maxAge
         printrow.append(rateAge)
-        age.append(diff.days)
+        natura = str(row[4])
+        printrow.append(natura.replace(" ", "").replace("-", ""))
         
-        #row.append(calendar.timegm(t0.utctimetuple()))
-        #row.append(calendar.timegm(t1.utctimetuple()))
         c.writerow(printrow)
         
