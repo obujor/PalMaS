@@ -3,12 +3,12 @@ d3.json("json/data.json", function(error, root) {
 		dataWords = root.words.slice(0,100);
 		dataWords.reverse();
 
-  d3.layout.cloud().size([600, 600])
+  d3.layout.cloud().size([400, 400])
       .words(dataWords.map(function(d, index) {
         return {text: d.word, size: d.counter*0.3};
       }))
       .padding(5)
-      .rotate(function() { return ~~(Math.random() * 3) * 40; })
+      .rotate(function() { return ~~(Math.random() * 2) * 90; })
       .font("Impact")
       .fontSize(function(d) { return d.size; })
       .on("end", draw)
@@ -16,8 +16,8 @@ d3.json("json/data.json", function(error, root) {
 
   function draw(words) {
     d3.select("body").append("svg")
-        .attr("width", 600)
-        .attr("height", 600)
+        .attr("width", 400)
+        .attr("height", 400)
       .append("g")
         .attr("transform", "translate(150,150)")
       .selectAll("text")
