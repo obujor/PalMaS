@@ -1,0 +1,29 @@
+## NUMERO IDDL APPROVATI #
+
+PREFIX osr: <http://dati.senato.it/osr/>
+
+
+SELECT  ?idddl, ?titolo, str(?stato), ?legislatura, str(?dataPresentazione) AS ?dataPresentazione, ?dataApprovazione
+{
+?ddl osr:dataStatoDdl ?dataApprovazione .
+?ddl osr:dataStatoDdl ?dataApprovazione .
+?ddl osr:idDdl ?idddl .
+?ddl osr:titolo ?titolo .
+?ddl osr:statoDdl ?stato .
+?ddl osr:legislatura ?legislatura .
+?ddl osr:dataPresentazione ?dataPresentazione .
+?ddl osr:ramo ?ramo
+
+{ SELECT ?idddl (MAX(?dataStato2) AS ?maxDataStato)
+     WHERE
+     {  
+?ddl2 osr:dataStatoDdl ?dataStato2 .
+?ddl2 osr:idDdl ?idddl
+} 
+}
+
+FILTER (?dataStato = ?maxDataStato).
+
+FILTER (REGEX(?stato,'approvato definitivamente','i')).
+
+}
