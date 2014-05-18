@@ -6,6 +6,8 @@ import Image, ImageOps
 import logging
 import urllib
 import csv
+import time
+import calendar
 from datetime import datetime
 from urlparse import urlparse
 
@@ -24,10 +26,18 @@ if __name__ == '__main__':
     c = csv.writer(open(args.csv_write, 'wb'))
     header = next(reader)
     header.append('age')
+    header.append('dataPresentazioneTS')
+    header.append('dataApprovazioneTS')
     c.writerow(header)
+        
     for row in reader:
         t0 = datetime.strptime(row[args.dataPresentazione], '%Y-%m-%d')
         t1 = datetime.strptime(row[args.dataApprovazione], '%Y-%m-%d')
+        
         diff = t1 - t0
         row.append(diff.days)
+        
+        
+        row.append(calendar.timegm(t0.utctimetuple()))
+        row.append(calendar.timegm(t1.utctimetuple()))
         c.writerow(row)
