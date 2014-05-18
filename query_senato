@@ -305,6 +305,38 @@ FILTER (REGEX(?stato,'approvato definitivamente','i')).
 GROUP BY ?legislatura
 
 
+######################## LEGISLATURA NUMERO IDDDL APPALTI APPROVATI CON NUMERO FASI ####################
+
+PREFIX osr: <http://dati.senato.it/osr/>
+
+
+
+SELECT  ?legislatura (COUNT(DISTINCT ?idddl) AS ?numApprovatiDefinitivamente) (AVG(?numFasi) AS ?numFasiAvg) (MAX(?numFasi) AS ?numFasiMax)
+{
+
+?ddl osr:dataStatoDdl ?dataStato; osr:idDdl ?idddl; osr:statoDdl ?stato; osr:legislatura ?legislatura
+
+{  SELECT ?idddl (MAX(?dataStato2) AS ?maxDataStato)
+     WHERE
+     {  
+?ddl2 osr:dataStatoDdl ?dataStato2; osr:idDdl ?idddl
+} 
+}
+
+{  SELECT ?idddl (COUNT(DISTINCT ?faseIter) AS ?numFasi)
+     WHERE
+     {  
+?iterDdl a osr:IterDdl; osr:idDdl ?idddl; osr:fase ?faseIter.
+} 
+}
+
+FILTER (?dataStato = ?maxDataStato).
+
+FILTER (REGEX(?stato,'approvato definitivamente','i')).
+
+}
+ORDER BY ?legislatura
+
 ############## LEGISLATURA IDDL NUMERO RESPINTI ################
 PREFIX osr: <http://dati.senato.it/osr/>
 
