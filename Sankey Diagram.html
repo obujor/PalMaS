@@ -89,7 +89,7 @@ var sankey = d3.sankey()
 
 var path = sankey.link();
 
-d3.json("./assorbito.json", function(energy) {
+d3.json("assorbito.json", function(energy) {
 
   sankey
       .nodes(energy.nodes)
