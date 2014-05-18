@@ -16,6 +16,44 @@ var svg = d3.select("body").append("svg")
     .attr("height", diameter)
   .append("g")
     .attr("transform", "translate(" + diameter / 2 + "," + diameter / 2 + ")");
+    
+    
+var appendLegend = function(d) {
+	if(d.depth == 1) {
+		var perc = (d.children.length/totalChildren*100).toFixed(2);
+		var name = '<span class="listName">'+d.name+'</span>';
+		var percColors = '';
+		
+		for(var color in colorsCounter[d.name]) {
+			var colorPerc = (colorsCounter[d.name][color]/d.children.length*100).toFixed(2);
+			var cName = (color == "#00DA00") ? "Approvati" : "Respinti";
+			percColors+='<div><span class="cName">'+cName+'</span><span class="listPercColor" style="color: '+color+'">'+colorPerc+'%</span></div>'
+		}
+		
+		var percHtml = '<div class="initResults">'+percColors+'</div>';
+		d3.select("#list").append("div").attr("class", "iniziativaPerc").html(name+percHtml);
+	}
+}
+
+var calcTotal = function(data) {
+	var total = 0,
+		color;
+	
+	colorsCounter = {};	
+		
+	for(var i = 0; i < data.children.length; i++) {
+		total += data.children[i].children.length;
+		colorsCounter[data.children[i].name] = {};
+		for(var j = 0; j < data.children[i].children.length; j++) {
+			color = data.children[i].children[j].color;
+			if(color) {
+				if(!colorsCounter[data.children[i].name][color]) colorsCounter[data.children[i].name][color] = 0;
+				colorsCounter[data.children[i].name][color]++;
+			}
+		}
+	}
+	totalChildren = total;
+}
 
 d3.json("json/data.json", function(error, root) {
   if (error) return console.error(error);
@@ -23,12 +61,16 @@ d3.json("json/data.json", function(error, root) {
   var focus = root,
       nodes = pack.nodes(root),
       view;
+      
+      calcTotal(root);
 
   var circle = svg.selectAll("circle")
       .data(nodes)
     .enter().append("circle")
       .attr("class", function(d) { return d.parent ? d.children ? "node" : "node node--leaf" : "node node--root"; })
-      .style("fill", function(d) { return d.color ? d.color : d.children ? color(d.depth) : null; })
+      .style("fill", function(d) { appendLegend(d); return d.color ? d.color : d.children ? color(d.depth) : null; })
+      .style("stroke", function(d) { return d.stroke ? d.stroke : null; })
+      .style("stroke-width", function(d) { return d.stroke ? 1.5 : null; })
       .on("click", function(d) { if (focus !== d) zoom(d), d3.event.stopPropagation(); });
 
   var text = svg.selectAll("text")
