@@ -1,3 +1,8 @@
+body {
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+}
+
+
 .node {
   cursor: pointer;
 }
@@ -21,4 +26,39 @@
 .node--root,
 .node--leaf {
   pointer-events: none;
+}
+
+
+#list {
+	width: 200px;
+	border: 1px solid black;
+	position:absolute;
+	left: 970px;
+	padding: 10px;
+}
+
+.listName {
+	font-weight: bold;
+}
+
+.listPercColor {
+	padding-right: 5px;
+}
+
+.cName {
+	padding-right: 10px;
+	
+}
+
+.cName:after {
+	content: ':';
+	
+}
+
+.iniziativaPerc {
+	margin-bottom: 10px;
+}
+
+.initResults {
+	padding-left: 20px;
 }
