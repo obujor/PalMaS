@@ -44,18 +44,13 @@
 <p id="chart">
 
 
-<footer>
-  <aside>May 22, 2012</aside>
-  <a href="../" rel="author">Mike Bostock</a>
-</footer>
-
 <script src="http://d3js.org/d3.v2.min.js?2.9.1"></script>
 <script src="sankey.js"></script>
 <script>
 
 var margin = {top: 1, right: 1, bottom: 6, left: 1},
     width = 960 - margin.left - margin.right,
-    height = 2500 - margin.top - margin.bottom;
+    height = 3500 - margin.top - margin.bottom;
 
 var formatNumber = d3.format(",.0f"),
     format = function(d) { return formatNumber(d) + " TWh"; },
