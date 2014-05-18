@@ -35,6 +35,7 @@ if __name__ == '__main__':
         age.append(diff.days)
         
     maxAge = float(max(age))
+    print('max age: '+str(maxAge))
     
   with open(args.csv_read, 'rb') as csvfile:
     reader = csv.reader(csvfile)
