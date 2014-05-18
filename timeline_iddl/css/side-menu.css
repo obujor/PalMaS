@@ -224,7 +224,7 @@ Hides the menu at `48em`, but modify this based on your app's needs.
     }
 
     #layout {
-        padding-left: 150px; /* left col width "#menu" */
+        
         left: 0;
     }
     #menu {

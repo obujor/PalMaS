@@ -1,1 +1,32 @@
-[{"label":"Tonnara Florio (Kursal Tonnara Vergine Maria)","indirizzo":"Discesa Tonnara","numeroCivico":"4","cap":"90142","quartiere":"","citta":"Palermo","geolocazione":"38.151101,13.374156","telefono":"091/6375611","mobile":"","email":"discoteca@tonnaraflorio.com","web":"http://www.tonnaraflorio.com/discoteca.htm","tipi":"divertimento","tipiSpecifici":"Discoteca","tipiSpecificiReduced":"Discoteca","times":[{"starting_time":"64800000","ending_time":"86400000"}]},{"label":"Country Disco Club","indirizzo":"Viale dell'Olimpo","numeroCivico":"3","cap":"90149","quartiere":"","citta":"Palermo","geolocazione":"38.1890353,13.318663799999999","telefono":"091/304977","mobile":"","email":"robertobianconi@inwind.it","web":"http://www.countrydiscoclub.com","tipi":"divertimento","tipiSpecifici":"Discoteca","tipiSpecificiReduced":"Discoteca","times":[{"starting_time":"77400000","ending_time":"93600000"}]}]
+[
+    {
+        "label": "label 1",
+        "mobile": "",
+        "email": "discoteca@tonnaraflorio.com",
+        "web": "http://www.tonnaraflorio.com/discoteca.htm",
+        "tipi": "divertimento",
+        "tipiSpecifici": "Discoteca",
+        "tipiSpecificiReduced": "Discoteca",
+        "times": [
+            {
+                "starting_time": "888364800",
+                "ending_time": "916704000"
+            }
+        ]
+    },
+    {
+        "label": "label 2",
+        "mobile": "",
+        "email": "robertobianconi@inwind.it",
+        "web": "http://www.countrydiscoclub.com",
+        "tipi": "divertimento",
+        "tipiSpecifici": "Discoteca",
+        "tipiSpecificiReduced": "Discoteca",
+        "times": [
+            {
+                "starting_time": "867369600",
+                "ending_time": "876182400"
+            }
+        ]
+    }
+]
