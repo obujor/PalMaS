@@ -16,8 +16,8 @@ d3.json("json/data.json", function(error, root) {
 
   function draw(words) {
     d3.select("body").append("svg")
-        .attr("width", 1000)
-        .attr("height", 700)
+        .attr("width", 600)
+        .attr("height", 600)
       .append("g")
         .attr("transform", "translate(150,150)")
       .selectAll("text")
