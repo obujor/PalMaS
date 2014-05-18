@@ -8,7 +8,7 @@ d3.json("json/data.json", function(error, root) {
         return {text: d.word, size: d.counter*0.3};
       }))
       .padding(5)
-      .rotate(function() { return ~~(Math.random() * 4) * 40; })
+      .rotate(function() { return ~~(Math.random() * 2) * 90; })
       .font("Impact")
       .fontSize(function(d) { return d.size; })
       .on("end", draw)
