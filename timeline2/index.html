@@ -55,9 +55,9 @@ var svg = d3.select("body").append("svg")
   .append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-d3.tsv("data.tsv", type, function(error, data) {
-  x.domain(data.map(function(d) { return d.letter; }));
-  y.domain([0, d3.max(data, function(d) { return d.frequency; })]);
+d3.tsv("data17.tsv", type, function(error, data) {
+  x.domain(data.map(function(d) { return d.idddl; }));
+  y.domain([0, d3.max(data, function(d) { return d.age; })]);
 
   svg.append("g")
       .attr("class", "x axis")
@@ -72,21 +72,21 @@ d3.tsv("data.tsv", type, function(error, data) {
       .attr("y", 6)
       .attr("dy", ".71em")
       .style("text-anchor", "end")
-      .text("Lunghezza");
+      .text("Lunghezza approvazione");
 
   svg.selectAll(".bar")
       .data(data)
     .enter().append("rect")
       .attr("class", "bar")
-      .attr("x", function(d) { return x(d.letter); })
+      .attr("x", function(d) { return x(d.idddl); })
       .attr("width", x.rangeBand())
-      .attr("y", function(d) { return y(d.frequency); })
-      .attr("height", function(d) { return height - y(d.frequency); });
+      .attr("y", function(d) { return y(d.age); })
+      .attr("height", function(d) { return height - y(d.age); });
 
 });
 
 function type(d) {
-  d.frequency = +d.frequency;
+  d.age = +d.age;
   return d;
 }
 
