@@ -3,7 +3,7 @@
 PREFIX osr: <http://dati.senato.it/osr/>
 
 
-SELECT  ?idddl, ?titolo, str(?stato), ?legislatura, str(?dataPresentazione) AS ?dataPresentazione, ?dataApprovazione
+SELECT  ?idddl, ?titolo, ?legislatura, str(?dataPresentazione) AS ?dataPresentazione, ?dataApprovazione
 {
 ?ddl osr:dataStatoDdl ?dataApprovazione .
 ?ddl osr:dataStatoDdl ?dataApprovazione .
@@ -27,3 +27,5 @@ FILTER (?dataStato = ?maxDataStato).
 FILTER (REGEX(?stato,'approvato definitivamente','i')).
 
 }
+
+ORDER BY ASC(?legislatura)
