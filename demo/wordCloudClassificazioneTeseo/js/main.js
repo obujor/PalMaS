@@ -3,7 +3,7 @@ d3.json("json/data.json", function(error, root) {
 		dataWords = root.words.slice(0,100);
 		dataWords.reverse();
 
-  d3.layout.cloud().size([400, 400])
+  d3.layout.cloud().size([300, 300])
       .words(dataWords.map(function(d, index) {
         return {text: d.word, size: d.counter*0.3};
       }))
@@ -16,8 +16,8 @@ d3.json("json/data.json", function(error, root) {
 
   function draw(words) {
     d3.select("body").append("svg")
-        .attr("width", 400)
-        .attr("height", 400)
+        .attr("width", 300)
+        .attr("height", 300)
       .append("g")
         .attr("transform", "translate(150,150)")
       .selectAll("text")
