@@ -3,12 +3,12 @@ d3.json("json/data.json", function(error, root) {
 		dataWords = root.words.slice(0,100);
 		dataWords.reverse();
 
-  d3.layout.cloud().size([2000, 600])
+  d3.layout.cloud().size([600, 600])
       .words(dataWords.map(function(d, index) {
         return {text: d.word, size: d.counter*0.3};
       }))
       .padding(5)
-      .rotate(function() { return ~~(Math.random() * 2) * 90; })
+      .rotate(function() { return ~~(Math.random() * 3) * 40; })
       .font("Impact")
       .fontSize(function(d) { return d.size; })
       .on("end", draw)
