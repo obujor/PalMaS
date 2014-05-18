@@ -529,3 +529,33 @@ FILTER (REGEX(?finalstato,'approvato definitivamente','i')).
 
 }
 ORDER BY ?legislatura
+
+
+######################## CLASSIFICAZIONI TESEO ##################
+
+PREFIX osr: <http://dati.senato.it/osr/>
+
+
+SELECT DISTINCT ?legislatura ?idddl ?dataStato ?stato ?teseo
+{
+
+?ddl osr:dataStatoDdl ?dataStato; osr:idDdl ?idddl; osr:statoDdl ?stato; osr:legislatura ?legislatura; osr:titolo ?titolo; osr:classificazione ?rif_teseo.
+?rif_teseo dcterms:subject ?steseo.
+?steseo skos:prefLabel ?teseo.
+
+{  SELECT ?idddl (MAX(?dataStato2) AS ?maxDataStato)
+     WHERE
+     {  
+?ddl2 osr:dataStatoDdl ?dataStato2; osr:idDdl ?idddl
+} 
+}
+
+FILTER (?dataStato = ?maxDataStato).
+
+FILTER (REGEX(?stato,'approvato definitivamente','i')).
+
+FILTER (?legislatura = 13).
+
+}
+ORDER BY ?legislatura ?dataStato ?idddl
+
