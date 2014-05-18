@@ -1,16 +1,16 @@
-## NUMERO IDDL APPROVATI #
+## NUMERO IDDL APPROVATI NELLA 17esima LEGISLATURA #
 
 PREFIX osr: <http://dati.senato.it/osr/>
 
 
-SELECT  ?idddl, ?titolo, ?legislatura, str(?dataPresentazione) AS ?dataPresentazione, ?dataApprovazione
+SELECT  ?idddl, ?titolo, str(?dataPresentazione) AS ?dataPresentazione, ?dataApprovazione
 {
 ?ddl osr:dataStatoDdl ?dataApprovazione .
 ?ddl osr:dataStatoDdl ?dataApprovazione .
 ?ddl osr:idDdl ?idddl .
 ?ddl osr:titolo ?titolo .
 ?ddl osr:statoDdl ?stato .
-?ddl osr:legislatura ?legislatura .
+?ddl osr:legislatura 17 .
 ?ddl osr:dataPresentazione ?dataPresentazione .
 ?ddl osr:ramo ?ramo
 
@@ -27,5 +27,3 @@ FILTER (?dataStato = ?maxDataStato).
 FILTER (REGEX(?stato,'approvato definitivamente','i')).
 
 }
-
-ORDER BY ASC(?legislatura)
