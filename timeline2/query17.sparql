@@ -2,7 +2,7 @@
 
 PREFIX osr: <http://dati.senato.it/osr/>
 
-SELECT ?ddl, ?idddl, ?titolo, str(?dataPresentazione) AS ?dataPresentazione, ?dataApprovazione {
+SELECT ?idddl, ?ddl, ?titolo, str(?dataPresentazione) AS ?dataPresentazione, ?dataApprovazione {
 	?ddl osr:idDdl ?idddl . 
 	?ddl osr:titolo ?titolo .
 	?ddl osr:statoDdl ?stato .
