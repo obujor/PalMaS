@@ -25,7 +25,7 @@ var svg = d3.select("body")
     .append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-d3.tsv("data17.tsv", type, function(error, data) {
+d3.tsv("query17.tsv", type, function(error, data) {
   x.domain(data.map(function(d) { return d.idddl; }));
   y.domain([0, d3.max(data, function(d) { return d.age; })]);
 
