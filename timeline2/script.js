@@ -35,7 +35,7 @@ d3.tsv("data17.tsv", type, function(error, data) {
       .call(xAxis)
       .selectAll("text")  
             .style("text-anchor", "end")
-            .attr("dx", "-.8em")
+            .attr("dx", "-.5em")
             .attr("dy", ".15em")
             .attr("transform", function(d) {
                 return "rotate(-65)" 
