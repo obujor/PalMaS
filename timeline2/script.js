@@ -1,5 +1,5 @@
 
-var margin = {top: 20, right: 20, bottom: 30, left: 40},
+var margin = {top: 20, right: 20, bottom: 100, left: 40},
     width = 960 - margin.left - margin.right,
     height = 500 - margin.top - margin.bottom;
 
@@ -35,7 +35,7 @@ d3.tsv("data17.tsv", type, function(error, data) {
       .call(xAxis)
       .selectAll("text")  
             .style("text-anchor", "end")
-            .attr("dx", "-.05em")
+            .attr("dx", "-.2em")
             .attr("dy", ".15em")
             .attr("transform", function(d) {
                 return "rotate(-65)" 
