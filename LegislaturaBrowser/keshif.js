@@ -1032,7 +1032,7 @@ kshf.init = function (options) {
     var me = this;
     // BASIC OPTIONS
     this.chartTitle = options.chartTitle;
-	this.queryURL_base = 'https://docs.google.com/spreadsheet/d/';
+	this.queryURL_base = 'https://docs.google.com/spreadsheets/d/';
 	this.charts = [];
     this.dt = {};
     this.dt_id = {};
