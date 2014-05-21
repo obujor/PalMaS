@@ -1,0 +1,7 @@
+grammar.js
+diagram-grammar.js
+sequence-diagram.js
+sequence-diagram-min.js
+sequence-diagram-min.js.map
+node_modules
+build/
