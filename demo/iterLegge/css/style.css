@@ -4,9 +4,12 @@ body {
 	padding-top: 100px !important;
 }
 
+html {
+	padding-bottom: 20px;
+}
+
 #iter {
 	margin: auto;
-	width: 700px;
 	height:400px;
 	text-align:center;
 }
@@ -15,23 +18,18 @@ body {
 	text-align: center;
 }
 
-fieldset, #detailsCamera, #detailsSenato {
-    font-family: sans-serif;
-    border: 5px solid #2274D9;
-}
-
-#senato legend {
+#senato legend, #commissioniS legend {
 	background: #9A1818;
 }
 
-#senato {
+#senato, #senato .itemClick, #commissioniS {
 	border: 5px solid #9A1818;
 }
-#camera legend {
+#camera legend, #commissioniC legend {
 	background: #4373A2;
 }
 
-#camera {
+#camera, #camera .itemClick, #commissioniC  {
 	border: 5px solid #4373A2;
 }
 
@@ -71,7 +69,6 @@ fieldset, #detailsCamera, #detailsSenato {
 }
 
 #cameraSenato {
-	width: 80%;
 	margin:auto;
 }
 
@@ -80,14 +77,11 @@ fieldset {
 	min-height: 300px;
 	position: relative;
 	text-align:center;
+	padding-bottom: 10px;
 }
 
-fieldset:first-child {
+#cameraSenato fieldset {
 	float: left;
-}
-
-fieldset:last-of-type {
-	float: right;
 }
 
 #proposta, #approvazione, fieldset legend {
@@ -116,13 +110,15 @@ fieldset legend {
 	height: 100px;
 	text-align: center;
 	padding: 6px 0;
-	font-size: 12px;
+	font-size: 16px;
+	font-weight: bold;
 	line-height: 1.428571429;
 	border-radius: 50%;
+	background: rgba(0,0,0,0);
 }
 
 .itemClick:hover {
-    border: 2px solid #2274D9;
+    border-color: #5CB85C !important;
     cursor: pointer;
 }
 
@@ -139,6 +135,35 @@ fieldset legend {
     border-bottom:none;
 }
 
+.commissioni legend {
+	font-size: 20px;
+	width: 180px;
+	margin-left: 30px;
+}
+
+fieldset.commissDate {
+	width: 90%;
+	min-height: 100px;
+	margin: auto;
+}
+
+fieldset.commissDate legend {
+	font-size: 1.1em;
+}
+
+.commissioni {
+	margin: 0px 20px 0px 20px;
+	width: 250px;
+}
+
+#cameraContainer {
+	float:left;
+}
+
+#senatoContainer {
+	float:right;
+}
+
 
 #proposta, #approvazione {
     color: black;
@@ -146,6 +171,10 @@ fieldset legend {
     width: 50%;
     margin:auto;
     border-radius: 5px !important;
+}
+
+#approvazione {
+	margin-bottom: 30px;
 }
 
 .active {
@@ -158,6 +187,10 @@ legend.active {
 
 #statusBar {
 	margin-top: 5px;
+}
+
+#proposta {
+	margin-top: 100px;
 }
 
 #proposta .data {
@@ -177,6 +210,11 @@ legend.active {
 }
 
 
+#camera .items>div, #senato .items>div {
+	height: 105px;
+}
+
+
 #statusButtons {
 	margin:auto;
 	width: 130px;
@@ -187,12 +225,12 @@ legend.active {
 }
 
 #centerArrow {
-	float: left;
+	position: absolute;
 }
 
 line.arrow {
 	stroke: #5CB85C;
-	stroke-width: 5px;
+	stroke-width: 2px;
 }
 
 marker#arrow {
@@ -205,4 +243,72 @@ marker#arrow {
 
 .progress {
 	margin-bottom: 5px;
+	margin-top: 30px;
 }
+
+#statusDateButtons {
+	padding: 0px;
+	margin-top: -30px;
+}
+
+#statusDateButtons span {
+	position:absolute;
+	display: block;
+	float: left;
+	font-size: 0.9em;
+    -webkit-transform: rotate(-45deg);
+    -moz-transform: rotate(-45deg);
+    -o-transform: rotate(-45deg);
+    transform:rotate(-45deg);
+    background-color: black;
+    color: white;
+    padding: 2px;
+    font-weight: bold;
+    border-radius: 5px;
+}
+
+#statusDateButtons span.miniStep {
+	font-size: 0.7em;
+}
+
+#statusDateButtons span:hover {
+	cursor: pointer;
+	color: #5CB85C !important;
+}
+
+#statusBarInfo {
+	padding: 5px;
+	margin: 70px 0 5px 0;
+	text-align: center;
+}
+
+#statusBarInfo:empty {
+	opacity: 0;
+}
+
+.activeColor {
+	color: #5CB85C !important;
+}
+
+#statusBarWidget {
+	height: 20px; 
+}
+
+.info_C {
+	color: white;
+	background: #4373A2 !important;
+}
+
+.info_S {
+	color: white;
+	background: #9A1818 !important;
+}
+
+.dateWidget.alert-success {
+	color: #000000 !important;
+}
+
+.dateWidget.alert-success.activeColor {
+	color: #5CB85C !important;
+}
+

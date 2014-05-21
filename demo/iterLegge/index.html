@@ -1,3 +1,10 @@
+<!--
+Made by
+Luca Cervone
+Monica Palmirani
+Octavian Bujor
+-->
+
 <!DOCTYPE html>
 <html>
 	<head>
@@ -19,6 +26,13 @@
 			</div>
 			<div id="topArrow" class="arrowContainer"></div>
 			<div id="cameraSenato">
+				<div id="cameraContainer">
+				<fieldset id="commissioniC" class="commissioni">
+					<legend>
+						Commissioni
+					</legend>
+					<div class="items"></div>
+				</fieldset>
 				<fieldset id="camera">
 					<legend>
 						<span id="logoCamera"><img src="images/camera.gif"></span>
@@ -26,7 +40,8 @@
 					</legend>
 					<div class="items"></div>
 				</fieldset>
-				<div id="centerArrow" class="arrowContainer"></div>
+				</div>
+				<div  id="senatoContainer">
 				<fieldset id="senato">
 					<legend>
 						<span id="logoSenato"><img src="images/senato.jpg"></span>
@@ -34,6 +49,14 @@
 					</legend>
 					<div class="items"></div>
 				</fieldset>
+				<fieldset id="commissioniS" class="commissioni">
+					<legend>
+						Commissioni
+					</legend>
+					<div class="items"></div>
+				</fieldset>
+				</div>
+				<div id="centerArrow" class="arrowContainer"></div>
 				<div class="clear"></div>
 			</div>
 			<div id="bottomArrow" class="arrowContainer"></div>
@@ -42,11 +65,15 @@
 			</div>
 		</div>
 
-		<nav class="navbar navbar-default navbar-fixed-top" role="navigation">
+		<nav id="topNavBar" class="navbar navbar-default navbar-fixed-top" role="navigation">
 			<div id="statusBar" class="container">
 				<div class="progress">
-					<div id="progressBarWidget" class="progress-bar progress-bar-success" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%"></div>
+					<div id="progressBarWidget" class="progress-bar progress-bar-success" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%"> 
+					</div>
 				</div>
+				<div id="statusDateButtons">
+				</div>
+				<div id="statusBarInfo" class="alert alert-warning"><strong>Premi "Play" per visualizzare il procedimento legislativo</strong></div>
 				<div id="statusButtons">
 					<button id="prevStep" type="button" class="btn btn-default navbar-btn glyphicon glyphicon-step-backward"></button>
 					<button id="playPause" type="button" class="btn btn-default navbar-btn glyphicon glyphicon-play"></button>
@@ -54,12 +81,6 @@
 				</div>
 			</div>
 		</nav>
-		<div id="detailsCamera">
-			<ul></ul>
-		</div>
-		<div id="detailsSenato">
-			<ul></ul>
-		</div>
 		<script src="js/main.js"></script>
 	</body>
 </html>
