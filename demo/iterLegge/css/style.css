@@ -1,0 +1,208 @@
+body {
+	font-family: Verdana, Arial, Helvetica, sans-serif;
+	padding: 20px;
+	padding-top: 100px !important;
+}
+
+#iter {
+	margin: auto;
+	width: 700px;
+	height:400px;
+	text-align:center;
+}
+
+#iter>div {
+	text-align: center;
+}
+
+fieldset, #detailsCamera, #detailsSenato {
+    font-family: sans-serif;
+    border: 5px solid #2274D9;
+}
+
+#senato legend {
+	background: #9A1818;
+}
+
+#senato {
+	border: 5px solid #9A1818;
+}
+#camera legend {
+	background: #4373A2;
+}
+
+#camera {
+	border: 5px solid #4373A2;
+}
+
+#logoCamera, #logoSenato {
+	float: left;
+	padding-top: 5px;
+	margin-top: 5px;
+	display: block;
+	border-radius: 50%;
+	width: 30px;
+	height: 30px;
+	background: white;
+}
+
+#logoCamera img, #logoSenato img {
+	vertical-align: top;
+	height: 20px;
+}
+
+#detailsCamera, #detailsSenato {
+	width: 300px;
+	height: 500px;
+	background: #F2F2F2;
+	border: 5px solid #2274D9;
+}
+
+#detailsCamera {
+	position: absolute;
+	left: 0px;
+	top:0px;
+}
+
+#detailsSenato {
+	position: absolute;
+	right: 0px;
+	top:0px;
+}
+
+#cameraSenato {
+	width: 80%;
+	margin:auto;
+}
+
+fieldset {
+	width: 200px;
+	min-height: 300px;
+	position: relative;
+	text-align:center;
+}
+
+fieldset:first-child {
+	float: left;
+}
+
+fieldset:last-of-type {
+	float: right;
+}
+
+#proposta, #approvazione, fieldset legend {
+    padding: 5px 10px;
+    font-size: 32px;
+}
+
+fieldset legend {
+    font-size: 28px;
+}
+
+.round {
+    border-radius: 50%;
+    behavior: url(PIE.htc); /* remove if you don't care about IE8 */
+    width: 100px;
+    height: 100px;
+    line-height: 100px;
+    display:block;
+    float: left;
+    border: 5px solid #ddd;
+    vertical-align: middle;
+}
+
+.btn-circle {
+	width: 100px;
+	height: 100px;
+	text-align: center;
+	padding: 6px 0;
+	font-size: 12px;
+	line-height: 1.428571429;
+	border-radius: 50%;
+}
+
+.itemClick:hover {
+    border: 2px solid #2274D9;
+    cursor: pointer;
+}
+
+fieldset legend {
+    background: #2274D9;
+    color: #fff;
+    border-radius: 5px;
+    box-shadow: 0 0 0 5px #ddd;
+    font-weight: bold !important;
+    text-align: center !important;
+    width: 170px;
+    margin-left: 10px;
+    padding:0 10px;
+    border-bottom:none;
+}
+
+
+#proposta, #approvazione {
+    color: black;
+    border: 5px solid #ddd;
+    width: 50%;
+    margin:auto;
+    border-radius: 5px !important;
+}
+
+.active {
+	border-color: #5CB85C !important;
+}
+
+legend.active {
+	box-shadow: 0 0 0 5px #5CB85C !important;
+}
+
+#statusBar {
+	margin-top: 5px;
+}
+
+#proposta .data {
+	display:block;
+	font-size: 0.7em;
+}
+
+.clear {
+	clear: both;
+}
+
+#progressBar{
+	width:100%;
+	height: 30px;
+	border: 5px solid #ddd; 
+	border-radius: 5px;
+}
+
+
+#statusButtons {
+	margin:auto;
+	width: 130px;
+}
+
+#bottomArrow, #topArrow {
+	height: 100px;
+}
+
+#centerArrow {
+	float: left;
+}
+
+line.arrow {
+	stroke: #5CB85C;
+	stroke-width: 5px;
+}
+
+marker#arrow {
+	fill: #5CB85C;
+}
+
+.notApproved {
+	border-color: #FF0000 !important;
+}
+
+.progress {
+	margin-bottom: 5px;
+}
