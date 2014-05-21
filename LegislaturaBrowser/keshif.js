@@ -1,5 +1,5 @@
 /*jslint plusplus: true, vars: true, browser: true, white:true, nomen :true, sloppy:true, continue:true */
-/*global $, d3, google, alert */
+/*global d3, google */
 
 /*********************************
 
@@ -124,9 +124,9 @@ var ACTID_CONFIG= {
 var ACTID_OTHER = {
     DataSource : 1,
     InfoButton : 2,
-    LeftPanelWidth: 5,
     OpenPage   : 3, // load
     ClosePage  : 4,  // unload
+    LeftPanelWidth: 5,
     Resize     : 6
 };
 
@@ -134,7 +134,7 @@ var ACTID_OTHER = {
 // ***************************************************************************************************
 // ITEM BASE OBJECT/PROPERTIES
 // ***************************************************************************************************
-kshf.Item = function(d, idIndex){
+kshf.Item = function(d, idIndex, primary){
     // the main data within item
     this.data = d;
     this.idIndex = idIndex; // TODO: Items don't need to have ID index, only one per table is enough!
@@ -145,6 +145,15 @@ kshf.Item = function(d, idIndex){
     this.barValue = 0;
     this.barValueMax = 0;
 	this.items = []; // set of assigned primary items
+    if(primary){
+        // 1 true value is added for global search
+        this.filters = [true];
+        this.barCount = 1; // 1 by default
+        this.mappedRows = [true];
+        this.mappedData = [true];
+        this.dots = [];
+        this.cats = [];
+    }
 };
 kshf.Item.prototype.id = function(){
     return this.data[this.idIndex];
@@ -201,7 +210,8 @@ kshf.Item.prototype.highlightCategories = function(){
     }
 }
 kshf.Item.prototype.highlightOnList = function(){
-    this.listItem.setAttribute("highlight",true);
+    if(this.listItem!== undefined)
+        this.listItem.setAttribute("highlight",true);
 }
 kshf.Item.prototype.highlightAttributes = function(){
     this.highlightDots();
@@ -229,127 +239,98 @@ kshf.Item.prototype.nohighlightAttributes = function(){
 }
 
 // ***************************************************************************************************
-// GOOGLE CHART LOADING
+// DOCUMENT LOADING
 // ***************************************************************************************************
 
-// Gets google chart data and converts it to plain javascript array, for use with kshf
-kshf.convertToArray = function(dataTable,sheetID,isPrimary){
-    var r,c,arr = [];
-    // find the index called "id"
-    var idIndex = -1;
-    var numCols = dataTable.getNumberOfColumns();
-    var itemId=0;
-    var newItem;
-
-    for(c=0; true ; c++){
-        if(c===numCols || dataTable.getColumnLabel(c).trim()===sheetID) {
-            idIndex = c;
-            break;
-        }
-    }
-
-    arr.length = dataTable.getNumberOfRows(); // pre-allocate for speed
-	for(r=0; r<dataTable.getNumberOfRows() ; r++){
-		var a=[];
-        a.length = numCols; // pre-allocate for speed
-		for(c=0; c<numCols ; c++) { a[c] = dataTable.getValue(r,c); }
-        // push unique id if necessary
-        if(idIndex===numCols) a.push(itemId++);
-        newItem = new kshf.Item(a,idIndex);
-        if(isPrimary){
-            newItem.filters = [true];
-            newItem.mappedRows = [true];
-            newItem.mappedData = [true];
-            newItem.dots = [];
-            newItem.cats = [];
-        }
-        arr[r] = newItem;
-	}
-    return arr;
-};
 // Loads all source sheets
+// Once everything is loaded, kshf.createCharts() will be called
 kshf.loadSource = function(){
     if(this.source.callback){
         this.source.callback();
         return;
     }
-    var i;
-	for(i=0; i<this.source.sheets.length; i++){
+	for(var i=0; i<this.source.sheets.length; i++){
         var sheet = this.source.sheets[i];
         if(sheet.id===undefined){ sheet.id="id"; }
         if(i==0){
             sheet.primary = true;
             this.primaryTableName = sheet.name;
         }
+        if(sheet.tableName===undefined){
+            sheet.tableName = sheet.name;
+        }
         if(this.source.gdocId){
             this.loadSheet_Google(sheet);
         } else if(this.source.dirPath){
             this.loadSheet_File(sheet);
         } else if (sheet.data) { // load data from memory - ATR
-            this.loadSheet_Data(sheet);
+            this.loadSheet_Memory(sheet);
         }
 	}
 };
 
 kshf.loadSheet_Google = function(sheet){
-    var tName = sheet.name;
-    var qString=kshf.queryURL_base+this.source.gdocId+'/gviz/tq?headers=1'
+    var me=this;
+    var qString=kshf.queryURL_base+this.source.gdocId+'&headers=1'
     if(sheet.sheetID){
         qString+='&gid='+sheet.sheetID;
     } else {
-        qString+='&sheet='+tName;
+        qString+='&sheet='+sheet.name;
     }
     if(sheet.range){
         qString+="&range="+sheet.range;
     }
-    var query=new google.visualization.Query(qString);
+
+    var googleQuery=new google.visualization.Query(qString);
     if(sheet.query){
-        query.setQuery(sheet.query);
+        googleQuery.setQuery(sheet.query);
     }
-    this.sendTableQuery(this,query,sheet,this.source.sheets.length);
+
+    googleQuery.send( function(response){
+        if(response.isError()) {
+            d3.select(".kshf.layout_infobox div.status_text span")
+                .text("Cannot load data");
+            d3.select(".kshf.layout_infobox img")
+                .attr("src",me.dirRoot+"img/alert.png")
+                .style("height","40px");
+            d3.select(".kshf.layout_infobox div.status_text div")
+                .text("("+response.getMessage()+")");
+            return;
+        }
+        var j,r,i,arr=[],idIndex=-1,itemId=0;
+        var dataTable = response.getDataTable();
+        var numCols = dataTable.getNumberOfColumns();
+
+        // find the index with sheet.id (idIndex)
+        for(i=0; true ; i++){
+            if(i===numCols || dataTable.getColumnLabel(i).trim()===sheet.id) {
+                idIndex = i;
+                break;
+            }
+        }
+        // create the data array
+        arr.length = dataTable.getNumberOfRows(); // pre-allocate for speed
+        for(r=0; r<dataTable.getNumberOfRows() ; r++){
+            var c=[];
+            c.length = numCols; // pre-allocate for speed
+            for(i=0; i<numCols ; i++) { c[i] = dataTable.getValue(r,i); }
+            // push unique id as the last column if necessary
+            if(idIndex===numCols) c.push(itemId++);
+            arr[r] = new kshf.Item(c,idIndex,sheet.primary);
+        }
+
+        kshf.createColumnNames(sheet.tableName);
+        for(j=0; j<dataTable.getNumberOfColumns(); j++){
+            kshf.insertColumnName(sheet.tableName,dataTable.getColumnLabel(j).trim(),j);
+        }
+        me.finishDataLoad(sheet,arr);
+    });
 };
 
-// give it alist split by, it will reconstruct "... , ..." cases back
-var unescapeCommas = function(c){
-    var k=0,j;
-    var escaped=false;
-    var cell;
-    var a=[];
-    for(j=0; j<c.length;j++){
-        if(escaped){
-            cell+=","+c[j];
-            if(c[j][c[j].length-1]==="\""){
-                escaped=false;
-            } else {
-                continue;
-            }
-        } else {
-            if(c[j][0]==="\""){
-                escaped = true;
-                cell = c[j].slice(1,c[j].length-1);
-                continue;
-            }
-            cell = c[j];
-        }
-        // convert to num
-        var n=+cell;
-        if(!isNaN(n) && cell!==""){
-            cell=n;
-        } else {/*
-            // convert to date
-            var dt = Date.parse(cell);
-            if(!isNaN(dt)){ cell = new Date(dt); } */
-        }
-        a.push(cell);
-    }
-    return a;
-};
-
+// The only place where jquery - ajax load - is used!
 kshf.loadSheet_File = function(sheet){
     var me=this;
     var fileName=this.source.dirPath+sheet.name+"."+this.source.fileType;
-    var tableName = sheet.name;
-    if(sheet.tableName) { tableName = sheet.tableName; }
     $.ajax( {
         url:fileName,
         type:"GET",
@@ -357,13 +338,11 @@ kshf.loadSheet_File = function(sheet){
         success: function(data) {
             var i,j;
             var lines = data.split(/\r\n|\r|\n/g);
-            if(lines.length<1) { return; }
-            kshf.dt_ColNames[tableName] = {};
-            kshf.dt_ColNames_Arr[tableName] = [];
+            if(lines.length<2) { return; } // csv file doens't have data
+            kshf.createColumnNames(sheet.tableName);
             var arr = [];
             var idIndex = -1;
             var itemId=0;
-            var item;
             // for each line, split on , character
             for(i=0; i<lines.length; i++){
                 var c;
@@ -371,108 +350,79 @@ kshf.loadSheet_File = function(sheet){
                     c=lines[i].split(",");
                 else if(me.source.fileType==='tsv')
                     c=lines[i].split("\t");
-                c=unescapeCommas(c);
+                c=kshf.unescapeCommas(c);
                 if(i===0){ // header 
                     for(j=0; j<c.length;j++){
                         var colName = c[j];
-                        kshf.dt_ColNames[tableName][colName] = j;
-                        kshf.dt_ColNames_Arr[tableName][j]=colName;
+                        kshf.insertColumnName(sheet.tableName,colName,j);
                         if(colName===sheet.id){ idIndex = j;}
                     }
                     if(idIndex===-1){ // id column not found, you need to create your own
-                        kshf.dt_ColNames[tableName][sheet.id] = j;
-                        kshf.dt_ColNames_Arr[tableName][j] = sheet.id;
+                        kshf.insertColumnName(sheet.tableName,sheet.id,j);
                         idIndex = j;
                     }
                 } else { // content
-                    if(idIndex===c.length){// push unique id if necessary
-                        c.push(itemId++);
-                    }
-                    item = new kshf.Item(c,idIndex);
-                    // 1 true item is added for global search
-                    if(sheet.primary){ 
-                        item.filters = [true];
-                        item.mappedRows = [true];
-                        item.mappedData = [true];
-                        item.dots = [];
-                        item.cats = [];
-                    }
-                    arr.push(item);
+                    // push unique id as the last column if necessary
+                    if(idIndex===c.length) c.push(itemId++);
+                    arr.push(new kshf.Item(c,idIndex,sheet.primary));
                 }
             }
-            kshf.dt[tableName] = arr;
-            if(sheet.primary){
-                kshf.items = arr;
-                kshf.itemsSelectedCt = arr.length;
-            }
-            // find the id row, and create the indexed table
-            var id_table = {};
-            for(j=0; j<arr.length ;j++) {
-                var r=arr[j];
-                id_table[r.id()] = r; 
-            }
-            kshf.dt_id[tableName] = id_table;
-            kshf.incrementLoadedTableCount();
+            me.finishDataLoad(sheet, arr);
         }
     });
 };
 
 // load data from memory - ATR
-kshf.loadSheet_Data = function(sheet){
-    var tableName = sheet.name;
-    if(sheet.tableName) { tableName = sheet.tableName; }
+kshf.loadSheet_Memory = function(sheet){
     var i,j;
-    kshf.dt_ColNames[tableName] = {};
-    kshf.dt_ColNames_Arr[tableName] = [];
     var arr = [];
     var idIndex = -1;
     var itemId=0;
-    // for each line, split on , character
+    this.createColumnNames(sheet.tableName);
     for(i=0; i<sheet.data.length; i++){
         var c = sheet.data[i];
         if(i===0){ // header 
             for(j=0; j<c.length;j++){
                 var colName = c[j];
-                kshf.dt_ColNames[tableName][colName] = j;
-                kshf.dt_ColNames[tableName][j] = colName;
+                kshf.insertColumnName(sheet.tableName,colName,j);
                 if(colName===sheet.id){ idIndex = j;}
             }
             if(idIndex===-1){ // id column not found, you need to create your own
-                kshf.dt_ColNames[tableName][sheet.id] = j;
-                kshf.dt_ColNames[tableName][j] = sheet.id;
+                kshf.insertColumnName(sheet.tableName,sheet.id,j);
                 idIndex = j;
             }
         } else { // content
-            if(idIndex===c.length){// push unique id if necessary
-                c.push(itemId++);
-            }
-            var item = new kshf.Item(c,idIndex);
-            // 1 true item is added for global search
-            if(sheet.primary){ 
-                item.filters = [true];
-                item.mappedRows = [true];
-                item.mappedData = [true];
-                item.dots = [];
-                item.cats = [];
-            }
-            arr.push(item);
+            // push unique id as the last column if necessary
+            if(idIndex===c.length) c.push(itemId++);
+            arr.push(new kshf.Item(c,idIndex,sheet.primary));
         }
-    }   
-    kshf.dt[tableName] = arr;
+    }
+    this.finishDataLoad(sheet,arr);
+};
+
+kshf.createColumnNames = function(tableName){
+    kshf.dt_ColNames    [tableName] = {};
+    kshf.dt_ColNames_Arr[tableName] = [];
+};
+kshf.insertColumnName = function(tableName, colName, index){
+    kshf.dt_ColNames    [tableName][colName] = index;
+    kshf.dt_ColNames_Arr[tableName][index  ] = colName;
+};
+
+kshf.finishDataLoad = function(sheet,arr) {
+    kshf.dt[sheet.tableName] = arr;
     if(sheet.primary){
         kshf.items = arr;
         kshf.itemsSelectedCt = arr.length;
     }
-    // find the id row, and create the indexed table
     var id_table = {};
-    for(j=0; j<arr.length ;j++) {
+    for(var j=0; j<arr.length ;j++) {
         var r=arr[j];
         id_table[r.id()] = r; 
     }
-    kshf.dt_id[tableName] = id_table;
+    kshf.dt_id[sheet.tableName] = id_table;
     kshf.incrementLoadedTableCount();
 };
-
 
 kshf.incrementLoadedTableCount = function(){
     var me=this;
@@ -492,10 +442,6 @@ kshf.incrementLoadedTableCount = function(){
                 var d=mainTable[i];
                 d.barCount = d.data[colId];
             }
-        } else {
-            for(i=0; i<mainTableLen; i++){
-                mainTable[i].barCount = 1;  // each item counts as 1 to see the real number
-            }
         }
 
         d3.select(".kshf.layout_infobox div.status_text span")
@@ -508,50 +454,8 @@ kshf.incrementLoadedTableCount = function(){
     }
 }
 
+
 // Sends the spreadsheet query, retrieves the result in asynch mode, prepares the data and updates visualization when all data is loaded.
-kshf.sendTableQuery = function(_kshf, q, sheet, tableCount){
-    var me = this;
-    var tableName = sheet.name;
-    q.send( function(response){
-        if(response.isError()) {
-            d3.select(".kshf.layout_infobox div.status_text span")
-                .text("Cannot load data");
-            d3.select(".kshf.layout_infobox img")
-                .attr("src",me.dirRoot+"img/alert.png")
-                .style("height","40px");
-            d3.select(".kshf.layout_infobox div.status_text div")
-                .text("("+response.getMessage()+")");
-            return;
-        }/*
-        if(response.hasWarning()) {
-            alert("Cannot get data from spreadsheet: reason:"+response.getMessage());
-            return;
-        }*/
-        var j;
-        var google_datatable = response.getDataTable();
-        var d3_table = _kshf.convertToArray(google_datatable,sheet.id,sheet.primary);
-        _kshf.dt[tableName] = d3_table;
-        _kshf.dt_ColNames[tableName] = {};
-        _kshf.dt_ColNames_Arr[tableName] = [];
-        for(j=0; j<google_datatable.getNumberOfColumns(); j++){
-            var colName=google_datatable.getColumnLabel(j).trim();
-            _kshf.dt_ColNames[tableName][colName] = j;
-            _kshf.dt_ColNames_Arr[tableName][j] = colName;
-        }
-        if(sheet.primary){
-            kshf.items = d3_table;
-            kshf.itemsSelectedCt = d3_table.length;
-        }
-        // find the id row, and create the indexed table
-        var id_table = {};
-        for(j=0; j<d3_table.length ;j++) {
-            var r=d3_table[j];
-            id_table[r.id()] = r; 
-        }
-        _kshf.dt_id[tableName] = id_table;
-        kshf.incrementLoadedTableCount();
-   });
-};
 kshf.createTableFromTable = function(srcTableName, dstTableName, mapFunc){
     var i,uniqueID=0;
     kshf.dt_id[dstTableName] = {};
@@ -614,6 +518,41 @@ kshf.cellToArray = function(dt, cols, splitExpr, convertInt){
         }
     }
 };
+// give it a list split by, it will reconstruct "... , ..." cases back
+kshf.unescapeCommas = function(c){
+    var k=0,j;
+    var escaped=false;
+    var cell;
+    var a=[];
+    for(j=0; j<c.length;j++){
+        if(escaped){
+            cell+=","+c[j];
+            if(c[j][c[j].length-1]==="\""){
+                escaped=false;
+            } else {
+                continue;
+            }
+        } else {
+            if(c[j][0]==="\""){
+                escaped = true;
+                cell = c[j].slice(1,c[j].length-1);
+                continue;
+            }
+            cell = c[j];
+        }
+        // convert to num
+        var n=+cell;
+        if(!isNaN(n) && cell!==""){
+            cell=n;
+        } else {/*
+            // convert to date
+            var dt = Date.parse(cell);
+            if(!isNaN(dt)){ cell = new Date(dt); } */
+        }
+        a.push(cell);
+    }
+    return a;
+};
 
 
 // ***********************************************************************************************************
@@ -627,7 +566,7 @@ function capitaliseFirstLetter(string) {
 kshf.getFilteringState = function(facetTitle, itemInfo) {
     var r={
         results : this.itemsSelectedCt,
-        textSrch: $("input.bigTextSearch").val()
+        textSrch: this.root.select("input.bigTextSearch").value
     };
 
     // facet title parameters
@@ -667,12 +606,21 @@ kshf.list = function(_kshf, config, root){
     this.dragSrcEl = null;
     this.dom = {};
     
-    this.config = config.sortOpts;
-    this.sortColWidth = config.sortColWidth;
+    // List sorting options
     this.listSortOrder = [];
-    for(i=0; i<this.config.length; i++){
+    this.sortOpts = config.sortOpts;
+    for(i=0; i<this.sortOpts.length ; i++){
+       var c = this.sortOpts[i];
+       if(c.value===undefined){
+           c.value = this.parentKshf.columnAccessFunc(c.name);
+       }
+       if(!c.label) c.label = c.value;
         this.listSortOrder.push(i);
     }
+    this.displayType = 'list';
+    if(config.displayType==='grid') this.displayType = 'grid';
+
+    this.sortColWidth = config.sortColWidth;
 
     if(config.textSearch!==undefined){
         if(config.textSearchFunc===undefined){
@@ -702,33 +650,44 @@ kshf.list = function(_kshf, config, root){
     
     var listHeader=this.listDiv.append("div").attr("class","listHeader");
     var listHeaderTopRow=listHeader.append("div").attr("class","topRow");
-    var count_wrap = listHeaderTopRow.append("span").attr("class","listheader_count_wrap");
+    var count_wrap = listHeaderTopRow.append("span").attr("class","listheader_count_wrap").style('width',me.sortColWidth+"px");;
     count_wrap.append("span").attr("class","listheader_count_bar");
     count_wrap.append("span").attr("class","listheader_count");
     listHeaderTopRow.append("span").attr("class","listheader_itemName").style("margin-right","2px").html(kshf.itemName);
     if(this.hideTextSearch!==true){    
         var listHeaderTopRowTextSearch = listHeaderTopRow.append("span").attr("class","bigTextSearch_wrap");
-        listHeaderTopRowTextSearch.append("img")
-            .attr('src',this.parentKshf.dirRoot+"img/search-logo.svg")
-            .attr("width","13")
+        listHeaderTopRowTextSearch.append("svg")
             .style("margin-left","20px")
+            .attr("width","13")
+            .attr("height","12")
+            .attr("viewBox","0 0 491.237793 452.9882813")
+            .attr("xmlns","http://www.w3.org/2000/svg")
+            .html(
+              '<g fill-rule="nonzero" clip-rule="nonzero" fill="#0F238C" stroke="#cb5454" stroke-miterlimit="4">'+
+               '<g fill-rule="evenodd" clip-rule="evenodd">'+
+                '<path fill="#cb5454" id="path3472" d="m328.087402,256.780273c-5.591797,8.171875 -13.280273,17.080078 -22.191406,25.296875c-9.685547,8.931641 -20.244141,16.550781 -27.433594,20.463867l163.125977,150.447266l49.649414,-45.783203l-163.150391,-150.424805z"/>'+
+                '<path fill="#cb5454" id="path3474" d="m283.82959,45.058109c-65.175781,-60.07764 -169.791023,-60.07764 -234.966309,0c-65.150881,60.100582 -65.150881,156.570309 0,216.671383c65.175285,60.100586 169.790527,60.100586 234.966309,0c65.175781,-60.101074 65.175781,-156.570801 0,-216.671383zm-34.198242,31.535152c-46.204102,-42.606934 -120.390625,-42.606934 -166.570305,0c-46.204594,42.583496 -46.204594,110.994141 0,153.601074c46.17968,42.606445 120.366203,42.606445 166.570305,0c46.205078,-42.606934 46.205078,-111.017578 0,-153.601074z"/>'+
+               '</g>'+
+              '</g>')
             ;
-        listHeaderTopRowTextSearch.append("input").attr("class","bigTextSearch")
+        var bigTextSearch = listHeaderTopRowTextSearch.append("input").attr("class","bigTextSearch")
             .attr("placeholder","Search "+(config.textSearch?config.textSearch:"title"))
             .attr("autofocus","true");
-        $("input.bigTextSearch").keydown(function(){
+        bigTextSearch.on("keydown",function(){
             if(this.timer){
                 clearTimeout(this.timer);
                 this.timer = null;
             }
             var x = this;
             this.timer = setTimeout( function(){
-                var v=$(x).val().toLowerCase();
-                $(x).parent().children("span").css('display',(v==='')?'none':'inline-block');
+                var v=x.value.toLowerCase();
+                listHeaderTopRowTextSearch.select("span").style('display',(v==='')?'none':'inline-block');
                 var v=v.split(" ");
 
                 // go over all the items in the list, search each keyword separately
-                me.dom.listItems.each(function(item){
+                var k;
+                for(k=0; k<kshf.items.length ; k++){
+                    item = kshf.items[k];                    
                     var i=0
                     var f = true;
                     for(i=0 ; i<v.length; i++){
@@ -737,23 +696,33 @@ kshf.list = function(_kshf, config, root){
                     }
                     item.filters[0] = f;
                     item.updateSelected();
-                });
+                };
                 kshf.update();
                 x.timer = null;
                 if(sendLog) sendLog(CATID.FacetFilter,ACTID_FILTER.MainTextSearch,kshf.getFilteringState());
             }, 750);
         });
         listHeaderTopRowTextSearch.append("span")
+            .html('<svg width="15" height="15" viewBox="0 0 48 48">'+
+                  '<g>'+
+                    '<path type="arc" style="fill-opacity:1;" cx="24" cy="24" rx="22" ry="22" d="M 46 24 A 22 22 0 1 1  2,24 A 22 22 0 1 1  46 24 z"/>'+
+                    '<path nodetypes="cc" style="fill:none;fill-opacity:0.75;fill-rule:evenodd;stroke:#ffffff;stroke-width:6;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" d="M 16.221825,16.221825 L 31.778175,31.778175"/>'+
+                    '<path nodetypes="cc" d="M 31.778175,16.221825 L 16.221825,31.778175" style="fill:none;fill-opacity:0.75;fill-rule:evenodd;stroke:#ffffff;stroke-width:6;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"/>'+
+                  '</g>'+
+                '</svg>')
             .on("click",function() {
-                $(this).prev('input').val('').focus().trigger("keyup");
-                $(this).css('display','none');
+                d3.select(this).style('display','none');
+                bigTextSearch[0][0].value = '';
+                bigTextSearch[0][0].focus();
 
                 // No timeout necessary. Clear selection rightaway.
                 // go over all the items in the list, search each keyword separately
-                me.dom.listItems.each(function(item){
+                var k;
+                for(k=0; k<kshf.items.length ; k++){
+                    item = kshf.items[k];                    
                     item.filters[0] = true;
                     item.updateSelected();
-                });
+                };
                 kshf.update();
                 if(sendLog) sendLog(CATID.FacetFilter,ACTID_FILTER.MainTextSearch,kshf.getFilteringState());
             });
@@ -772,39 +741,30 @@ kshf.list = function(_kshf, config, root){
             me.updateList();
         })
         .selectAll("input.list_sort_label")
-            .data(this.config)
+            .data(this.sortOpts)
         .enter().append("option")
             .attr("class", "list_sort_label")
             .text(function(d){ return d.name; })
             .attr("dt-order",function(d,i){ return i; })
             ;
-    for(i=0; i<this.config.length ; i++){
-        var c = this.config[i];
-        if(c.value===undefined){
-            c.value = this.parentKshf.columnAccessFunc(c.name);
-        }
-        if(!c.label) c.label = c.value;
-    }
 
     // add collapse list feature
     if(this.detailsToggle===true){
        var x=listColumnRow.append("div")
             .attr("class","itemstoggledetails");
-//            .style("padding-left",(this.sortColWidth+5)+"px");
         x.append("span").attr("class","items_details_on").html("[+]")
             .attr("title","Show details")
-            .on("click", function(d){ me.dom.listItems.each(function(d){ 
-                $(this).attr('details', true); }) 
+            .on("click", function(d){
+                me.dom.listItems.each(function(d){ d3.select(this).attr('details', true);});
                 me.listDiv.attr('showAll','false');
             });
         x.append("span").attr("class","items_details_off").html("[-]")
-            .attr("title","Show details")
-            .on("click", function(d){ me.dom.listItems.each(function(d){ 
-                $(this).attr('details', false); }) 
+            .attr("title","Hide details")
+            .on("click", function(d){
+                me.dom.listItems.each(function(d){ d3.select(this).attr('details', false); });
                 me.listDiv.attr('showAll','true');
             });
     }
-
 
     listColumnRow
         .append("span").attr("class","filter-blocks")
@@ -827,7 +787,7 @@ Array.prototype.repeat= function(what, L){
 kshf.list.prototype.updateListColumnHeaders = function(){
     var i,j;
     var iPrev=-1;
-    var sortValueFunc = this.config[this.listSortOrder[0]].value;
+    var sortValueFunc = this.sortOpts[this.listSortOrder[0]].value;
     var sortValueType = this.sortValueType();
     for(i=0;i<kshf.items.length;i++){
         var p=kshf.items[i];
@@ -851,7 +811,7 @@ kshf.columnAccessFunc = function(columnName){
 }
 
 kshf.list.prototype.sortValueType = function(){
-    var sortValueFunc = this.config[this.listSortOrder[0]].value;
+    var sortValueFunc = this.sortOpts[this.listSortOrder[0]].value;
     // 0: string, 1: date, 2: others
     var sortValueType_, sortValueType_temp, same;
     
@@ -893,6 +853,8 @@ kshf.compareListItems = function(a, b, sortValueFunc, sortValueType){
     if(sortValueType===0) {
         dif = f_a.localeCompare(f_b);
     } else if(sortValueType===1) {
+        if(f_a===null) return -1;
+        if(f_b===null) return 1;
         dif = f_b.getTime() - f_a.getTime();
     } else {
         dif = f_b-f_a;
@@ -901,7 +863,7 @@ kshf.compareListItems = function(a, b, sortValueFunc, sortValueType){
 }
 
 kshf.list.prototype.sortItems = function(){
-    var sortValueFunc = this.config[this.listSortOrder[0]].value;
+    var sortValueFunc = this.sortOpts[this.listSortOrder[0]].value;
     var sortValueType = this.sortValueType();
 	this.parentKshf.items.sort(function(a,b){
         // do not need to process unselected items, their order does not matter
@@ -914,50 +876,60 @@ kshf.list.prototype.sortItems = function(){
 
 kshf.list.prototype.updateSortColumnLabels=function(d,tada){
 	var t = d3.select(tada);
-    var kshf_ = this;
+    var me = this;
     var k,j;
 
-    t.style("border-top", 
-        function(d){ ;
-            return ((d.listsortcolumn[0])?"double 4px gray":"duble 0px gray");
-        });
+    var sortColumn=this.listSortOrder[0];
+
+    if(this.sortOpts[sortColumn].noGroupBorder !== true){
+        t.style("border-top", 
+            function(d){ ;
+                return ((d.listsortcolumn[0])?"double 4px gray":"duble 0px gray");
+            });
+    } else {
+        t.style("border-top", "solid 0px gray");
+    }
 
     // now update the text
-    var sortColumn=this.listSortOrder[0];
     t.select(".listsortcolumn")
-        .html(function(){ return kshf_.config[sortColumn].label(d); })
+        .html(function(){ return me.sortOpts[sortColumn].label(d); })
         ;
 };
 
 kshf.list.prototype.insertItems = function(){
     var this_ = this;
-	this.dom.listItems = this.listDiv.select(".listItemGroup").selectAll("div.listItem")
-		.data(kshf.items, function(d){ return d.id(); })
+
+    this.dom.listItems = this.listDiv.select(".listItemGroup").selectAll("div.listItem")
+        // if content Func is not defined, provide an empty list
+        .data((this.contentFunc===undefined?[]:kshf.items), function(d){ return d.id(); })
     .enter()
-		.append("div")
-		.attr("class","listItem")
+        .append("div")
+        .attr("class","listItem")
         .attr("details",this.detailsDefault?"true":"false")
         .attr("itemID",function(d){return d.id();})
         // store the link to DOM in the data item
         .each(function(d){ d.listItem = this; })
         .on("mouseover",function(d,i){
-            $(this).attr("highlight","true");
+            d3.select(this).attr("highlight","true");
             d.highlightAttributes();
         })
         .on("mouseout",function(d,i){
-            $(this).attr("highlight","false");
+            d3.select(this).attr("highlight","false");
             // find all the things that  ....
             d.nohighlightAttributes();
         });
 
-    this.dom.listItems
-        .append("div")
-        .attr("class","listcell listsortcolumn")
-        .html(function(d){
-            var titleFunc = this_.config[0].title;
-            if(titleFunc) { str+=" title=\""+titleFunc(d)+"\""; }
-        })
-        ;
+    if(this.displayType==='list'){
+        this.dom.listItems
+            .append("div")
+            .attr("class","listcell listsortcolumn")
+            .style("width",this_.sortColWidth+"px")
+            .html(function(d){
+                var titleFunc = this_.sortOpts[0].title;
+                if(titleFunc) { str+=" title=\""+titleFunc(d)+"\""; }
+            })
+            ;
+    }
 
     if(this_.detailsToggle){
         var x= this.dom.listItems
@@ -971,43 +943,43 @@ kshf.list.prototype.insertItems = function(){
             .on("click", kshf.listItemDetailToggleFunc);
     }
 
-    this.dom.listItems
+    this.dom.listItems_Content = this.dom.listItems
         .append("div")
         .attr("class","content")
         .html(function(d){ return this_.contentFunc(d);});
 };
 
 kshf.listItemDetailToggleFunc = function(d){
-    var nd = $(this), i=0;
-    while(nd.attr('details')===undefined){
-        nd = nd.parent();
+    var nd = d3.select(this)[0][0], i=0;
+    while(true){
         if(nd===undefined) return;
-    }
-    var m=nd.attr('details');
-    if(m==="true") {
-        if(sendLog) sendLog(CATID.ItemBased,ACTID_ITEM.Collapse,{itemID:d.id()});
-        nd.attr('details', false);
-    }
-    if(m==="false") {
-        if(sendLog) sendLog(CATID.ItemBased,ACTID_ITEM.Show,{itemID:d.id()});
-        nd.attr('details', true);
+        var details = nd.getAttribute('details');
+        if(details==="true"){
+            if(sendLog) sendLog(CATID.ItemBased,ACTID_ITEM.Collapse,{itemID:d.id()});
+            nd.setAttribute('details', false);
+        }
+        if(details==="false"){
+            if(sendLog) sendLog(CATID.ItemBased,ACTID_ITEM.Show,{itemID:d.id()});
+            nd.setAttribute('details', true);
+        }
+        nd = nd.parentNode;
     }
 }
 kshf.listItemDetailToggleFunc2 = function(t){
-    var nd = $(t), i=0;
-    while(nd.attr('details')===undefined){
-        nd = nd.parent();
+    var nd = d3.select(t)[0][0], i=0;
+    while(true){
         if(nd===undefined) return;
-    }
-    var m  = nd.attr('details');
-    var _id = nd.attr('itemID');
-    if(m==="true") {
-        if(sendLog) sendLog(CATID.ItemBased,ACTID_ITEM.Collapse,{itemID:_id});
-        nd.attr('details', false);
-    }
-    if(m==="false") {
-        if(sendLog) sendLog(CATID.ItemBased,ACTID_ITEM.Show,{itemID:_id});
-        nd.attr('details', true);
+        var details = nd.getAttribute('details');
+        var _id = nd.getAttribute('itemID');
+        if(details==="true"){
+            if(sendLog) sendLog(CATID.ItemBased,ACTID_ITEM.Collapse,{itemID:_id});
+            nd.setAttribute('details', false);
+        }
+        if(details==="false"){
+            if(sendLog) sendLog(CATID.ItemBased,ACTID_ITEM.Show,{itemID:_id});
+            nd.setAttribute('details', true);
+        }
+        nd = nd.parentNode;
     }
 }
 
@@ -1017,24 +989,28 @@ kshf.list.prototype.reorderItems = function(){
 		.order();
 };
 kshf.list.prototype.updateItemVisibility = function(){
+    var showType=this.displayType==='list'?"block":"inline-block";
 	this.dom.listItems
-		.style("display",function(pub){ return (pub.selected)?"block":"none"; });
+		.style("display",function(pub){ return (pub.selected)?showType:"none"; });
 };
 
 kshf.list.prototype.updateList = function(){
     // evaluates column information for each item. TODO: cache
     this.updateListColumnHeaders();
     var this_ = this;
+    if(this.displayType==='list'){
+        this.dom.listItems
+            .each(function(d){
+                if(!d.selected) { return; }
+                return this_.updateSortColumnLabels(d,this); 
+            });
+    }
 	this.dom.listItems
 		.each(function(d){
             if(!d.selected) { return; }
             return this_.updateSortColumnLabels(d,this); 
         });
-        d3.select(".listheader_count").text( function(){ 
-            if(kshf.itemsSelectedCt===0) { return "No"; }
-            return kshf.itemsSelectedCt;
-        });
-    d3.select(".listheader_count").text( function(){ 
+    d3.select(".listheader_count").text(function(){
         if(kshf.itemsSelectedCt===0) { return "No"; }
         return kshf.itemsSelectedCt;
     });
@@ -1056,7 +1032,7 @@ kshf.init = function (options) {
     var me = this;
     // BASIC OPTIONS
     this.chartTitle = options.chartTitle;
-	this.queryURL_base = 'https://docs.google.com/spreadsheets/d/';
+	this.queryURL_base = 'https://docs.google.com/spreadsheet/tq?key=';
 	this.charts = [];
     this.dt = {};
     this.dt_id = {};
@@ -1069,9 +1045,9 @@ kshf.init = function (options) {
     if(this.categoryTextWidth===undefined){
         this.categoryTextWidth = 115;
     }
-    if(this.categoryTextWidth<115){
+/*    if(this.categoryTextWidth<115){
         this.categoryTextWidth = 115;
-    }
+    }*/
     this.chartDefs = options.charts;
     this.listDef = options.list;
 
@@ -1100,6 +1076,8 @@ kshf.init = function (options) {
     this.source = options.source;
     this.source.loadedTableCount=0;
     this.loadedCb = options.loadedCb;
+    this.readyCb = options.readyCb;
+    this.updateCb = options.updateCb;
 
     this.time_animation_barscale = 400;
     this.layout_animation = 500;
@@ -1112,25 +1090,26 @@ kshf.init = function (options) {
     }
 
     this.root = d3.select(this.domID)
-        .attr("class","kshfHost")
+        .classed("kshfHost",true)
         .attr("tabindex","1")
         .style("position","relative")
         .style("overflow-y","hidden")
+        .on("keydown",function(){
+            var e = d3.event;
+            if(e.keyCode===27){ // escchartRowLabelSearchape
+                me.clearAllFilters();
+                if(sendLog) sendLog(CATID.FacetFilter,ACTID_FILTER.ClearAllEscape,kshf.getFilteringState());
+            }
+            if(e.shiftKey || e.altKey || e.ctrlKey || e.ctrlKey){
+                d3.select(this).attr("kb_modifier",true);
+            }
+        }).on("keyup",function(){
+            var e = d3.event;
+            if(e.shiftKey===false && e.altKey===false && e.ctrlKey===false && e.ctrlKey===false){
+                d3.select(this).attr("kb_modifier",false);
+            }
+        })
         ;
-
-    $(this.domID).keydown(function(e){
-        if(e.which===27){ // escchartRowLabelSearchape
-            me.clearAllFilters();
-            if(sendLog) sendLog(CATID.FacetFilter,ACTID_FILTER.ClearAllEscape,kshf.getFilteringState());
-        }
-        if(e.shiftKey || e.altKey || e.ctrlKey || e.ctrlKey){
-            $(this).attr("kb_modifier",true);
-        }
-    }).keyup(function(e){
-        if(e.shiftKey===false && e.altKey===false && e.ctrlKey===false && e.ctrlKey===false){
-            $(this).attr("kb_modifier",false);
-        }
-    });
 
     if(options.itemName!==undefined){
         this.itemName = options.itemName;
@@ -1167,13 +1146,6 @@ kshf.init = function (options) {
     creditString += "<iframe src=\"http:\/\/ghbtns.com\/github-btn.html?user=adilyalcin&repo=Keshif&type=fork&count=true&size=large\" allowtransparency=\"true\" frameborder=\"0\" scrolling=\"0\" width=\"152px\" height=\"30px\"><\/iframe>";
     creditString += "<\/div>";
     creditString += "";
-    creditString += "<div align=\"center\" class=\"boxinbox project_3rdparty\">";
-    creditString += " 3rd party libraries and APIs:<br\/>";
-    creditString += " <a href=\"http:\/\/d3js.org\/\" target=\"_blank\"><img src=\""+this.dirRoot+"img\/3rdparty_01.png\" style=\"width:110px; top:0px\"><\/a>";
-    creditString += " <a href=\"http:\/\/jquery.com\" target=\"_blank\"><img src=\""+this.dirRoot+"img\/3rdparty_02.png\" style=\"width:150px; top: -15px;\"><\/a>";
-    creditString += " <a href=\"https:\/\/developers.google.com\/chart\/\" target=\"_blank\"><img src=\""+this.dirRoot+"img\/3rdparty_03.png\" style=\"width:90px\"><\/a>";
-    creditString += "<\/div>";
-    creditString += "";
     creditString += "<div style=\"width: 450px;\" align=\"center\" class=\"boxinbox project_credits\">";
     creditString += " Developed by:<br\/>";
     creditString += " <a href=\"http:\/\/www.adilyalcin.me\" target=\"_blank\"><img src=\""+this.dirRoot+"img\/credit-1_01.png\" style=\"height:50px\"><\/a>";
@@ -1181,6 +1153,13 @@ kshf.init = function (options) {
     creditString += " <a href=\"http:\/\/www.cs.umd.edu\/hcil\/\" target=\"_blank\"><img src=\""+this.dirRoot+"img\/credit-1_03.png\" style=\"height:50px\"><\/a>";
     creditString += " <img src=\""+this.dirRoot+"img\/credit-1_04.png\" style=\"height:50px;padding:0px 4px 0px 4px\">";
     creditString += " <a href=\"http:\/\/www.umd.edu\" target=\"_blank\"><img src=\""+this.dirRoot+"img\/credit-1_05.png\" style=\"height:50px\"><\/a>";
+    creditString += "<\/div>";
+    creditString += "";
+    creditString += "<div align=\"center\" class=\"boxinbox project_3rdparty\">";
+    creditString += " 3rd party libraries and APIs:<br\/>";
+    creditString += " <a href=\"http:\/\/d3js.org\/\" target=\"_blank\"><img src=\""+this.dirRoot+"img\/3rdparty_01.png\" style=\"width:70px; top:0px\"><\/a>";
+    creditString += " <a href=\"http:\/\/jquery.com\" target=\"_blank\"><img src=\""+this.dirRoot+"img\/3rdparty_02.png\" style=\"width:150px; top: -5px;\"><\/a>";
+    creditString += " <a href=\"https:\/\/developers.google.com\/chart\/\" target=\"_blank\"><img src=\""+this.dirRoot+"img\/3rdparty_03.png\" style=\"width:60px\"><\/a>";
     creditString += "<\/div><br\/>";
     creditString += "";
     creditString += "<div align=\"center\" class=\"project_fund\">";
@@ -1192,16 +1171,16 @@ kshf.init = function (options) {
         this.layout_resize = this.root.append("div").attr("class", "kshf layout_resize")
            .on("mousedown", function (d, i) {
                me.root.style('cursor','nwse-resize');
-               var mouseDown_x = d3.mouse($("body")[0])[0];
-               var mouseDown_y = d3.mouse($("body")[0])[1];
-               var mouseDown_width  = $(this.parentNode).width();
-               var mouseDown_height = $(this.parentNode).height();
+               var mouseDown_x = d3.mouse(d3.select("body")[0][0])[0];
+               var mouseDown_y = d3.mouse(d3.select("body")[0][0])[1];
+               var mouseDown_width  = parseInt(d3.select(this.parentNode).style("width"));
+               var mouseDown_height = parseInt(d3.select(this.parentNode).style("height"));
 
                d3.select("body").on("mousemove", function() {
-                   var mouseDown_x_diff = d3.mouse($("body")[0])[0]-mouseDown_x;
-                   var mouseDown_y_diff = d3.mouse($("body")[0])[1]-mouseDown_y;
-                   $(me.domID).height(mouseDown_height+mouseDown_y_diff);
-                   $(me.domID).width (mouseDown_width +mouseDown_x_diff);
+                   var mouseDown_x_diff = d3.mouse(d3.select("body")[0][0])[0]-mouseDown_x;
+                   var mouseDown_y_diff = d3.mouse(d3.select("body")[0][0])[1]-mouseDown_y;
+                   d3.select(me.domID).style("height",(mouseDown_height+mouseDown_y_diff)+"px");
+                   d3.select(me.domID).style("width" ,(mouseDown_width +mouseDown_x_diff)+"px");
                    me.updateLayout();
                });
                d3.select("body").on("mouseup", function(){
@@ -1267,8 +1246,9 @@ kshf.init = function (options) {
             ;
     }
 
-
-    this.insertChartHeader();
+    if(this.chartTitle!==undefined){
+        this.insertChartHeader();
+    }
 
     var subRoot = this.root.append("div").style("position","relative");
 
@@ -1315,6 +1295,8 @@ kshf.createCharts = function(){
     // hide infobox
     d3.select(".kshf.layout_infobox").style("display","none");
     d3.select("div.infobox_loading").style("display","none");
+
+    if(this.readyCb!==undefined) { this.readyCb(); }
 }
 
 kshf.insertChartHeader = function(){
@@ -1375,17 +1357,26 @@ kshf.insertChartHeader = function(){
     dom_filter_header.append("span")
         .attr("class","barChartMainInfo")
         .text(this.primItemCatValue===null?"⇒Item Count ":("⇒Total "+this.primItemCatValue))//⟾
-        .append("img")
+        .append("span")
         .attr("class","refreshbarscales")
         .attr("width","13")
         .style("margin-bottom","-2px")
         .style("display","none")
-        .attr("src",this.dirRoot+"img/Refresh_font_awesome.svg")
         .on("click",function(){
             kshf.clearAllFilters();
             if(sendLog) sendLog(CATID.FacetFilter,ACTID_FILTER.ClearAll,kshf.getFilteringState());
-        });
-        ;
+        })
+        .append("svg")
+        .attr("viewBox","0 -256 1792 1792")
+        .attr("width","13px")
+        .attr("height","100%")
+        .append("g")
+            .attr("transform","matrix(1,0,0,-1,121.49153,1270.2373)")
+            .append("path")
+                .style("fill","currentColor")
+                .attr("d",
+                    "m 1511,480 q 0,-5 -1,-7 Q 1446,205 1242,38.5 1038,-128 764,-128 618,-128 481.5,-73 345,-18 238,84 L 109,-45 Q 90,-64 64,-64 38,-64 19,-45 0,-26 0,0 v 448 q 0,26 19,45 19,19 45,19 h 448 q 26,0 45,-19 19,-19 19,-45 0,-26 -19,-45 L 420,266 q 71,-66 161,-102 90,-36 187,-36 134,0 250,65 116,65 186,179 11,17 53,117 8,23 30,23 h 192 q 13,0 22.5,-9.5 9.5,-9.5 9.5,-22.5 z m 25,800 V 832 q 0,-26 -19,-45 -19,-19 -45,-19 h -448 q -26,0 -45,19 -19,19 -19,45 0,26 19,45 l 138,138 Q 969,1152 768,1152 634,1152 518,1087 402,1022 332,908 321,891 279,791 271,768 249,768 H 50 Q 37,768 27.5,777.5 18,787 18,800 v 7 q 65,268 270,434.5 205,166.5 480,166.5 146,0 284,-55.5 138,-55.5 245,-156.5 l 130,129 q 19,19 45,19 26,0 45,-19 19,-19 19,-45 z"
+                    );
 
 
     // Info & Credits
@@ -1449,7 +1440,6 @@ kshf.addRangeChart = function(options){
     );
 }
 
-
 kshf.update = function () {
     var i, chart, filteredCount=0;
 
@@ -1468,7 +1458,6 @@ kshf.update = function () {
         if(this.listDisplay.hideTextSearch!==true) {
             if(this.listDisplay.listDiv.select("input.bigTextSearch")[0][0].value!=="") filteredCount++;
         }
-        // d3 - for each item
         this.listDisplay.updateItemVisibility();
         // not optimal too
         this.listDisplay.updateList();
@@ -1485,7 +1474,16 @@ kshf.update = function () {
     // "clear all" filter button
     this.root.select(".filter-block-clear")
         .style("display",(filteredCount>0)?"inline-block":"none");
+
+    if(this.updateCb){
+        this.updateCb();
+    }
 };
+
+kshf.filterFacetAttribute = function(chartId, itemId){
+    var chart = this.charts[chartId];
+    chart.filterRow(chart.getData()[itemId]);
+}
 
 kshf.dif_activeItems = function(a,b){
 	return b.activeItems - a.activeItems;
@@ -1500,9 +1498,7 @@ kshf.sortFunc_ActiveCount_TotalCount = function(a,b){
     return dif;
 };
 kshf.sortFunc_BarValue = function(a,b){ 
-    var dif=kshf.dif_barValue(a,b);
-    if(dif===0) { return b.id()-a.id(); }
-    return dif;
+    return kshf.dif_barValue(a,b);
 };
 kshf.sortFunc_Column_Int_Incr = function(a,b){ 
     return a.data[1] - b.data[1]; 
@@ -1559,12 +1555,22 @@ kshf.clearAllFilters = function(){
     this.update();
 };
 
+kshf.domHeight = function(){
+    return parseInt(d3.select(this.domID).style("height"));
+};
+kshf.domWidth = function(){
+    return parseInt(d3.select(this.domID).style("width"));
+};
+
 kshf.updateLayout_Height = function(){
     var i;
     var chartHeaderHeight = 22;
-    var divHeight = $(this.domID).height() - chartHeaderHeight;
+    var divHeight = this.domHeight();
+    if(this.chartTitle!==undefined){
+        divHeight-=chartHeaderHeight;
+    }
 
-    this.divWidth = $(this.domID).width();
+    this.divWidth = this.domWidth();
 
     var divLineCount = Math.floor(divHeight/this.line_height);
     
@@ -1607,7 +1613,7 @@ kshf.updateLayout_Height = function(){
     this.root.select("div.listItemGroup")
         .transition()
         .duration(this.layout_animation)
-        .style("height",(remHeight-65)+"px")
+        .style("height",(remHeight-60)+"px")
         ;
 
     // *********************************************************************************
@@ -1683,7 +1689,7 @@ kshf.updateLayout_Height = function(){
         c4.update_VisibleItem(false);
     }
 
-    // adjust layout_right vertical position
+    // adjust layoutRight vertical position
     if(c2.type==='scatterplot'){
         this.layoutRight
             .transition()
@@ -1701,7 +1707,7 @@ kshf.updateLayout_Height = function(){
 kshf.updateLayout = function(){
     if(kshf.loaded!==true) return;
 
-    this.divWidth = $(this.domID).width();
+    this.divWidth = this.domWidth();
 
     kshf.time_animation_barscale = 400;
     var initBarChartWidth = this.width_leftPanel_bar;
@@ -1784,6 +1790,10 @@ kshf.setBarWidthLeftPanel = function(v){
     }
 }
 
+kshf.fullWidthResultSet = function(){
+    return this.charts.length==1 && this.charts[0].type==='scatterplot';
+}
+
 kshf.updateAllTheWidth = function(v){
     this.width_leftPanel_total = this.getRowTotalTextWidth()+this.width_leftPanel_bar+kshf.scrollWidth+kshf.scrollPadding+2;
 
@@ -1792,7 +1802,7 @@ kshf.updateAllTheWidth = function(v){
     this.root.select("div.layout_left_background").style("width",(this.width_leftPanel_total)+"px");
     this.root.select("div.filter_header").style("width",(this.width_leftPanel_total-8)+"px");
 
-    this.layoutRight.style("left",(this.width_leftPanel_total)+"px");
+    this.layoutRight.style("left",(this.fullWidthResultSet()?0:this.width_leftPanel_total)+"px");
 
     this.root.select(".kshf.layout_left_header span.filters_text")
         .style("margin-right","-8px")
@@ -1807,7 +1817,8 @@ kshf.updateAllTheWidth = function(v){
 
     // for some reason, on page load, this variable may be null. urgh.
     if(this.listDisplay){
-        this.listDisplay.listDiv.style("width",width_rightPanel_total+"px");
+        this.listDisplay.listDiv.style("width",
+            ((this.fullWidthResultSet()==false)?width_rightPanel_total+9:this.divWidth-15)+"px");
     }
 
     // update list
@@ -1818,26 +1829,17 @@ kshf.updateAllTheWidth = function(v){
 }
 
 kshf.updateCustomListStyleSheet = function(){
-    var customSheet = document.createElement('style');
-    customSheet.innerHTML = "";
-    var totalColWidth=0;
-    var columnPadding=5;//pixels per column
-    for(i=0; i< 1; i++){
-        var j=kshf.listDisplay.listSortOrder[i];
-        var optionWidth=this.listDisplay.sortColWidth;
-        customSheet.innerHTML+=
-            "div.listDiv div.listsortcolumn{ width: "+optionWidth+"px;}";
-        totalColWidth+=optionWidth;
+    var contentWidth = (this.width_rightPanel_total-10);
+    if(this.fullWidthResultSet()){
+        contentWidth+=this.width_leftPanel_total;
     }
-    // 25 is for itemtoggledetails
-    var contentWidth = (this.width_rightPanel_total-totalColWidth-30-25);
-//    customSheet.innerHTML += "div.listItem div.content{ width:"+contentWidth+"px; }";
-    this.listDisplay.listDiv.select("span.listheader_count_wrap").style("width",totalColWidth+"px");
-    this.listDisplay.dom.listItems.select(".content").style("width",contentWidth+"px");
+    // 22 is for itemtoggledetails
+    if(this.listDisplay.detailsToggle){ contentWidth-=22; }
+    contentWidth-=this.listDisplay.sortColWidth;
+    contentWidth-=9; // works for now. TODO: check 
     this.root.select("span.filter-blocks").style("width",contentWidth+"px");
-
-    if(!this.specialStyle){
-        this.specialStyle = document.body.appendChild(customSheet);
+    if(this.listDisplay.displayType==='list'){
+        this.listDisplay.dom.listItems_Content.style("width",contentWidth+"px");
     }
 };
 
@@ -1974,6 +1976,8 @@ kshf.BarChart.prototype.init_shared = function(options){
 
     if(this.options.catItemMap===undefined){
         this.options.catItemMap = this.parentKshf.columnAccessFunc(this.options.facetTitle);
+    } else if(typeof(this.options.catItemMap)==="string"){
+        this.options.catItemMap = kshf.columnAccessFunc(this.options.catItemMap);
     }
 
     // generate row table if necessary
@@ -2111,11 +2115,8 @@ kshf.BarChart.prototype.init_shared = function(options){
         (this.catCount_Total>=20 && this.options.forceSearch!==false)||this.options.forceSearch===true
         ;
 
-    // scrollbar options - depends on _dataMap - this.catCount_Total
-	this.scrollbar = { }; /*
-    if(!this.rowCount_VisibleItem) {
-        this.rowCount_VisibleItem = this.catCount_Total;
-    }*/
+    // scrollbar options
+	this.scrollbar = { };
     this.scrollbar.firstRow = 0;
     this.x_axis_active_filter = null;
 };
@@ -2450,6 +2451,7 @@ kshf.BarChart.prototype.init_DOM = function(){
     }
 
     this.insertHeader();
+
     this.insertScrollbar();
 
     this.insertItemRows_shared();
@@ -2936,7 +2938,7 @@ kshf.BarChart.prototype.insertHeader = function(){
                 (d==="All" && me.options.selectType==="MultipleAnd") ||
                 (d==="Any" && me.options.selectType==="MultipleOr")
                 )
-                $(this).attr("selected","selected");
+                d3.select(this).attr("selected","selected");
         })
         ;
     filterGr.append("span")
@@ -2982,7 +2984,7 @@ kshf.BarChart.prototype.insertHeader = function(){
             .attr("xml:space","preserve")
             .attr("viewBox","0 0 10 10")
             .on("click",function(d){
-                $(this.parentNode.parentNode).attr("shown",d)
+                d3.select(this.parentNode.parentNode).attr("shown",d)
             })
         .append("svg:circle")
             .attr("class",function(d){ return d;})
@@ -2999,10 +3001,19 @@ kshf.BarChart.prototype.insertHeader = function(){
 
     if(this.showTextSearch){
         var textSearchRowDOM = header_belowFirstRow.append("div").attr("class","leftHeader_XX").style("padding-top","1px");
-        textSearchRowDOM.append("img")
-            .attr('src',this.parentKshf.dirRoot+"img/search-logo.svg")
+        textSearchRowDOM.append("svg")
             .attr("class","chartRowLabelSearch")
             .attr("width","13")
+            .attr("height","12")
+            .attr("viewBox","0 0 491.237793 452.9882813")
+            .attr("xmlns","http://www.w3.org/2000/svg")
+            .html(
+              '<g fill-rule="nonzero" clip-rule="nonzero" fill="#0F238C" stroke="#cb5454" stroke-miterlimit="4">'+
+               '<g fill-rule="evenodd" clip-rule="evenodd">'+
+                '<path fill="#cb5454" id="path3472" d="m328.087402,256.780273c-5.591797,8.171875 -13.280273,17.080078 -22.191406,25.296875c-9.685547,8.931641 -20.244141,16.550781 -27.433594,20.463867l163.125977,150.447266l49.649414,-45.783203l-163.150391,-150.424805z"/>'+
+                '<path fill="#cb5454" id="path3474" d="m283.82959,45.058109c-65.175781,-60.07764 -169.791023,-60.07764 -234.966309,0c-65.150881,60.100582 -65.150881,156.570309 0,216.671383c65.175285,60.100586 169.790527,60.100586 234.966309,0c65.175781,-60.101074 65.175781,-156.570801 0,-216.671383zm-34.198242,31.535152c-46.204102,-42.606934 -120.390625,-42.606934 -166.570305,0c-46.204594,42.583496 -46.204594,110.994141 0,153.601074c46.17968,42.606445 120.366203,42.606445 166.570305,0c46.205078,-42.606934 46.205078,-111.017578 0,-153.601074z"/>'+
+               '</g>'+
+              '</g>')
             ;
         this.dom.showTextSearch= textSearchRowDOM.append("input")
             .attr("type","text")
@@ -3304,8 +3315,8 @@ kshf.BarChart.prototype.update_VisibleItem = function(forced){
 		.attr("y2", -8)
         ;
 	this.root.selectAll("g.timeAxisGroup rect.filter_nonselected")
-        .transition()
-        .duration(this.parentKshf.layout_animation)
+//        .transition()
+//        .duration(this.parentKshf.layout_animation)
         .attr("y",-visibleRowHeight-8)
 		.attr("height", visibleRowHeight)
         ;
@@ -3740,12 +3751,12 @@ kshf.BarChart.prototype.refreshFilterSummaryBlock = function(){
         if(this.catCount_Selected>3){
             var bold=this.catCount_Selected;
             bold+=" "+(this.options.textGroup?this.options.textGroup:"categories");
-            $(".filter_row_text_"+this.filterId+" .filter_item")
+            this.parentKshf.root.select(".filter_row_text_"+this.filterId+" .filter_item")
                 .html("<b>"+bold+"</b>")
                 .attr("title",selectedItemsText_Sm)
                 ;
         } else {
-            $(".filter_row_text_"+this.filterId+" .filter_item")
+            this.parentKshf.root.select(".filter_row_text_"+this.filterId+" .filter_item")
                 .html(selectedItemsText)
                 .attr("title",selectedItemsText_Sm)
                 ;
@@ -3976,11 +3987,22 @@ kshf.BarChart.prototype.updateSorting = function(force){
     if(funcToCall===undefined){
         funcToCall = kshf.sortFunc_ActiveCount_TotalCount;
     }
+    var compareFunc_Num = function(a,b){
+        return b - a;
+    };
+    var compareFunc_Str = function(a,b){
+        return b.localeCompare(a);
+    };
+    var compareFuncc = compareFunc_Num;
+    if(typeof(this.getData()[0].id())==="string") compareFuncc = compareFunc_Str;
+
     var justSortFunc = function(a,b){
         // call the sorting function
         var x=funcToCall(a,b);
         // use IDs if sorting function doesn't recide on ordering
-        if(x===0) { x = b.id() - a.id(); }
+        if(x===0) { 
+            x = compareFuncc(a.id(),b.id());
+        }
         // reverse ordering
         if(kshf_.sortInverse) { x*=-1; }
         return x;
@@ -4306,6 +4328,7 @@ kshf.BarChart.prototype.updateTimeScale = function(){
 }
 
 kshf.BarChart.prototype.insertTimeTicks = function(){
+    var kshf_ = this;
     var tickGroup = this.root.select("g.timeAxisGroup g.tickGroup");
 
     var numTicks = Math.floor(this.options.timeMaxWidth/70);
@@ -4320,6 +4343,31 @@ kshf.BarChart.prototype.insertTimeTicks = function(){
         ;
     ;
     tickGroup.call(xAxis);
+
+    this.insertTimeTicks_timeValues = [];
+
+    tickGroup.selectAll("text")
+        .each(function(d,i){
+            kshf_.insertTimeTicks_timeValues.push(d);
+        })
+        .on("click",function(d,i){
+            var curTime  = kshf_.insertTimeTicks_timeValues[i];
+            var nextTime = kshf_.insertTimeTicks_timeValues[i+1];
+            if(nextTime === undefined){
+                nextTime = kshf_.timeRange_ms.max;
+//                curTime = kshf_.insertTimeTicks_timeValues[i-1];
+            }
+            kshf_.timeFilter_ms.min = curTime;
+            kshf_.timeFilter_ms.max = nextTime;
+            kshf_.yearSetXPos();
+            kshf_.filterTime();
+
+            kshf_.sortSkip = true;
+            kshf.update();
+        })
+        ;
+
+    var text=xAxis.tickValues();
 
     tickGroup.selectAll(".tick.major text").style("text-anchor","middle");
 };
@@ -4346,6 +4394,8 @@ kshf.BarChart.prototype.insertTimeChartAxis_1 = function(){
     axisSubGroup
         .append("svg:rect")
         .attr("class", "filter_nonselected")
+        .attr("y",0)
+        .attr("height",0)
         .on("click",function(){
             d3.event.stopPropagation();
         })
@@ -4620,7 +4670,7 @@ kshf.BarChart.prototype.refreshTimeChartFilterText = function(){
         if(this.filterSummaryBlock_Time===null || this.filterSummaryBlock_Time===undefined){
             this.insertFilterSummaryBlock_Time();
         }
-        $(".filter_row_text_"+(this.filterId+1)+" .filter_item")
+        this.parentKshf.root.select(".filter_row_text_"+(this.filterId+1)+" .filter_item")
             .html("from <b>"+this.getFilterMinDateText()+"</b> to <b>"+this.getFilterMaxDateText()+"</b>")
         ;
     } else if(this.filterSummaryBlock_Time){
