@@ -1,0 +1,103 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+	<head>
+		<title>Votazioni XVII Legislatura</title>
+        <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+        <script type="text/javascript" src="jquery/jquery-1.9.1.min.js"></script>
+        <script type="text/javascript" src="d3.v3/d3.v3.js" charset="utf-8"></script>
+        <script type="text/javascript" src="keshif.js" charset="utf-8"></script>
+        <link rel="stylesheet" href="keshif.css"/ type="text/css">
+
+        <!-- Logging features -->
+        <script type="text/javascript" src="js/modernizr.js" charset="utf-8"></script>
+        <script type="text/javascript" src="js/log.js" charset="utf-8"></script>
+
+        <link rel="stylesheet" href="./style.css"/ type="text/css">
+        <script type="text/javascript">
+
+function resetSize(){
+    $('#chart_div').height($(window).height()-10);
+    $('#chart_div').width (1200);
+}
+
+function loadChart() {
+    resetSize();
+    $(window).resize(function() {
+        resetSize();
+        kshf.updateLayout();
+    });
+
+    kshf.init({
+        chartTitle: "Votazioni XVII Legislatura",
+        domID : "#chart_div",
+        dirRoot: "../",
+        categoryTextWidth: 150,
+        source : {
+            gdocId : '155ffnwCzePWOCqhtAd-D9EmIYvgD5RjHx-UtKvEydNA',
+            sheets : [ {name:"votazioniXVII"} ]
+        },
+        columnsSkip : [],
+        loadedCb: function(){
+            votazioniCols = kshf.dt_ColNames.votazioniXVII;
+        },
+        charts : [
+            {
+                facetTitle: "approvato",
+                catItemMap : function(vote){ return vote.data[votazioniCols['approvato']]?"Approvato":"Respinto"; },
+                timeTitle: "Date",
+                timeItemMap : function(votazione){var format = d3.time.format("%Y%m%d");return format.parse(votazione.data[votazioniCols.data].toString()); },
+                selectType: "Single",
+                textFilter: 'about'
+            }, {
+                facetTitle: "Favorevoli",
+                catItemMap : function(vote){ return Math.floor(vote.data[votazioniCols['favorevoli']]/100)*100; },
+                catLabelText: function(d) { return (+d.data[1])+"-"+(+d.data[1]+99);  },
+                sortingFuncs: [{
+                    no_resort: true,
+                    func: kshf.sortFunc_Column_ParseInt_Decr
+                    }],
+                forceSearch: false
+            },{
+                facetTitle: "Contrari",
+                catItemMap : function(vote){ return Math.floor(vote.data[votazioniCols['contrari']]/100)*100; },
+                catLabelText: function(d) { return (+d.data[1])+"-"+(+d.data[1]+99);  },
+                sortingFuncs: [{
+                    no_resort: true,
+                    func: kshf.sortFunc_Column_ParseInt_Decr
+                    }],
+                forceSearch: false
+            },{
+                facetTitle: "Astenuti",
+                catItemMap : function(vote){ return Math.floor(vote.data[votazioniCols['astenuti']]/10)*10; },
+                catLabelText: function(d) { return (+d.data[1])+"-"+(+d.data[1]+9);  },
+                sortingFuncs: [{
+                    no_resort: true,
+                    func: kshf.sortFunc_Column_ParseInt_Decr
+                    }],
+                forceSearch: false
+            }
+
+            ],
+        list: {
+            sortColWidth: 60,
+            sortOpts : [ {name: 'data'} ],
+            contentFunc : function(d) {
+                var id = d.data[kshf.dt_ColNames.votazioniXVII.votazione];
+                var denominazione = d.data[kshf.dt_ColNames.votazioniXVII.denominazione];
+                var descrizione = d.data[kshf.dt_ColNames.votazioniXVII.descrizione];
+                var favorevoli = d.data[kshf.dt_ColNames.votazioniXVII.favorevoli];
+                var contrari = d.data[kshf.dt_ColNames.votazioniXVII.contrari];
+                var astenuti = d.data[kshf.dt_ColNames.votazioniXVII.astenuti];
+                return "<div class=\"iteminfo iteminfo_0\">" +
+                        "<a href=\""+id+"\">" +denominazione + "</a><br><i>" + descrizione +"</i><br>"+
+                        "Favorevoli: " + favorevoli + " Contrari: " + contrari + " Astenuti: " + astenuti +
+                    "</div>";
+            }
+        }
+    });
+}
+$(document).ready(loadChart);
+</script>
+	</head>
+	<body><div id="chart_div"></div></body>
+</html>
