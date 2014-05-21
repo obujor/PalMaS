@@ -271,7 +271,7 @@ kshf.loadSource = function(){
 
 kshf.loadSheet_Google = function(sheet){
     var me=this;
-    var qString=kshf.queryURL_base+this.source.gdocId+'&headers=1'
+    var qString=kshf.queryURL_base+this.source.gdocId+'/gviz/tq?headers=1'
     if(sheet.sheetID){
         qString+='&gid='+sheet.sheetID;
     } else {
@@ -1032,7 +1032,7 @@ kshf.init = function (options) {
     var me = this;
     // BASIC OPTIONS
     this.chartTitle = options.chartTitle;
-	this.queryURL_base = 'https://docs.google.com/spreadsheet/tq?key=';
+	this.queryURL_base = 'https://docs.google.com/spreadsheet/d/';
 	this.charts = [];
     this.dt = {};
     this.dt_id = {};
