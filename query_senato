@@ -739,3 +739,31 @@ FILTER (?stato IN ("respinto"^^<http://www.w3.org/2001/XMLSchema#string>,
 }
 ORDER BY ?legislatura ?dataStato ?idddl
 
+
+
+
+PREFIX osr: <http://dati.senato.it/osr/>
+
+SELECT DISTINCT ?progrIter ?dataPresentazione ?fase ?ramo ?numeroFase ?stato ?dataStato ?idDdl ?assegnazione ?dataAssegnazione ?label
+WHERE
+{
+    ?ddl a osr:Ddl.
+?ddl osr:idDdl ?idDdl.
+    ?iter a osr:IterDdl.
+    ?iter osr:idDdl ?idDdl.
+    ?iter osr:fase ?faseIter.
+    ?faseIter osr:ddl ?fase.
+    ?faseIter osr:progrIter ?progrIter.
+    ?fase osr:ramo ?ramo.
+    ?fase osr:numeroFase ?numeroFase.
+    ?fase osr:statoDdl ?stato.
+    ?fase osr:dataStatoDdl ?dataStato.
+    ?fase osr:assegnazione ?assegnazione.
+    ?assegnazione osr:dataAssegnazione ?dataAssegnazione.
+    ?assegnazione rdfs:label ?label.
+    ?ddl osr:dataPresentazione ?dataPresentazione.
+    ?ddl osr:legislatura ?legislatura.
+  
+    FILTER(?idDdl=38775)
+} ORDER BY ?dataPresentazione
+
