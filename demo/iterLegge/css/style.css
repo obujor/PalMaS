@@ -49,27 +49,9 @@ html {
 	height: 20px;
 }
 
-#detailsCamera, #detailsSenato {
-	width: 300px;
-	height: 500px;
-	background: #F2F2F2;
-	border: 5px solid #2274D9;
-}
-
-#detailsCamera {
-	position: absolute;
-	left: 0px;
-	top:0px;
-}
-
-#detailsSenato {
-	position: absolute;
-	right: 0px;
-	top:0px;
-}
-
 #cameraSenato {
 	margin:auto;
+	min-width: 970px;
 }
 
 fieldset {
@@ -79,11 +61,6 @@ fieldset {
 	text-align:center;
 	padding-bottom: 10px;
 }
-
-#cameraSenato fieldset {
-	float: left;
-}
-
 #proposta, #approvazione, fieldset legend {
     padding: 5px 10px;
     font-size: 32px;
@@ -129,7 +106,7 @@ fieldset legend {
     box-shadow: 0 0 0 5px #ddd;
     font-weight: bold !important;
     text-align: center !important;
-    width: 170px;
+    width: 175px;
     margin-left: 10px;
     padding:0 10px;
     border-bottom:none;
@@ -152,18 +129,31 @@ fieldset.commissDate legend {
 }
 
 .commissioni {
-	margin: 0px 20px 0px 20px;
 	width: 250px;
 }
 
-#cameraContainer {
+#commissioniS {
+	margin-left: 20px;
+	float: right;
+}
+
+#commissioniC {
+	margin-right: 20px;
+	float: left;
+}
+
+#middle {
+	float: left;
+	min-width: 410px;
+}
+
+#camera {
 	float:left;
 }
 
-#senatoContainer {
+#senato {
 	float:right;
 }
-
 
 #proposta, #approvazione {
     color: black;

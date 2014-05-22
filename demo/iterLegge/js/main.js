@@ -1,7 +1,7 @@
-var map = {}, steps = [], iterStatus = {}, playInterval = false;
+var map = {}, steps = [], iterStatus = {}, playInterval = false, drawCenterArrows = null;
 
 function init() {
-	var dataUrl = "json/38775.json";
+	var dataUrl = "json/38775_giusto.json";
 	
 	$.getJSON(dataUrl, function(data) {
 		var row, dataProposta, container,
@@ -98,12 +98,10 @@ function initSteps(data) {
             newSteps.push({displayDate: date.value, dateSmall: true});
         }
     });
-    console.log(newSteps);
     var margin = ($("#statusDateButtons").width()/newSteps.length) - 15;
     
     $.each(newSteps, function(index, step) {
         var nextBig = newSteps.filter(function(el, elI) {if(elI > index && !el.dateSmall) return true;})[0];
-        console.log(nextBig);
         step.infoCls = (!step.infoCls && step.dateSmall) ? (nextBig) ? nextBig.infoCls : null : step.infoCls;
         var cls = (step.infoCls) ? step.infoCls : "alert-success";
         cls = (step.dateSmall) ? cls+" miniStep" : cls;
@@ -206,9 +204,8 @@ function fillInitialData(data) {
     
     GR = groupByDate;
     
-    setCenterArrowBox();
-    createCenterArrows(sequence);
-    $("#centerArrow .arrow").hide();
+    drawCenterArrows = $.proxy(drawCenterArrowsRaw, this, sequence);
+    drawCenterArrows();
     return "#proposta";
 }
 
@@ -217,8 +214,9 @@ function setCenterArrowBox() {
         width = $("#camera .itemClick:nth-child(1)").width(),
         left = pos.left+width;
     $("#centerArrow").width($("#senato .itemClick:nth-child(1)").offset().left-left);
-    $("#centerArrow").height($("#cameraSenato").height());
+    $("#centerArrow").height($("#camera").height());
     $("#centerArrow").css({left: left, top: $("#camera").position().top});
+    
     d3.selectAll("#centerArrow svg").attr("width", function() {
         return getParentSize(this).w;
     }).attr("height", function() {
@@ -236,11 +234,10 @@ function showDetails(data, el) {
 	for(var date in data.groupDate) {
 	    var list = "";
 	    for(var i = 0; i < data.groupDate[date].length; i++) {
-            list += '<li>'+data.groupDate[date][i].label.value+'</li>';
-            /*if(elements.indexOf(list) == -1) {
-                $(container+" ul").append(list);
-                elements.push(list);
-            }*/
+	        var listItem = '<li>'+data.groupDate[date][i].label.value+'</li>';
+            if(list.indexOf(listItem) == -1) {
+                list += listItem;
+            }
         }
 	    $(container+" .items").append('<fieldset class="commissDate"><legend>'+date+'</legend><ul>'+list+'</ul></fieldset>');
 	}
@@ -324,7 +321,7 @@ function createTopArrows() {
             x : posSenato.left+(cameraWidth/2),
             y : height - padding.bottomY
         }],
-        links = [{s:0,t:1, cls: "camera"}, {s:0,t:2,  cls: "senato"}];
+        links = [{s:0,t:1, cls: "camera", id: "top_camera_arrow"}, {s:0,t:2,  cls: "senato", id: "top_senato_arrow"}];
 
     createArrows(svg, nodes, links);
 }
@@ -338,6 +335,7 @@ function createBottomArrows() {
         cameraWidth = $("#camera").width(),
         posCamera = $("#camera").position(),
         posSenato = $("#senato").position(),
+        boxPosition = $(selector).position(),
         padding = {
             topY: 5,
             topX: 20,
@@ -345,10 +343,10 @@ function createBottomArrows() {
             bottomX: 20
         },
         nodes = [{
-            x : posCamera.left+(cameraWidth/2),
+            x : (posCamera.left-boxPosition.left)+(cameraWidth/2),
             y : padding.topY
         },{
-            x : posSenato.left+(cameraWidth/2),
+            x : (posSenato.left-boxPosition.left)+(cameraWidth/2),
             y : padding.topY
         }, {
             x : middle - padding.bottomX,
@@ -357,8 +355,7 @@ function createBottomArrows() {
             x : middle+padding.bottomX,
             y : height - padding.bottomY
         }],
-        links = [{s:0,t:2}, {s:1,t:3}];
-    
+        links = [{s:0,t:2, id: "bottom_camera_arrow"}, {s:1,t:3, id: "bottom_senato_arrow"}];
     createArrows(svg, nodes, links);
 }
 
@@ -375,7 +372,6 @@ function createCenterArrows(buttons) {
         nodes = [];
         links = [];
     
-    console.log(buttons);
     for(var i = 0; i < buttons.length; i++) {
         var obj = buttons[i], nextObj = buttons[i+1];
         if(obj && nextObj) {
@@ -414,21 +410,45 @@ function getTargetNode(nodes, type, index) {
     }
 }
 
-function createSvgNodes() {
+function createSvgNodes(resize) {
+    var hiddenArrows = $("line.arrow")
+                        .filter(function(i, el) { return $(el).css("display") == "none";})
+                        .map(function(i, el) { return "#"+$(el).attr("id");});
+    d3.selectAll("#topArrow, #bottomArrow, #centerArrow").html("");
     d3.selectAll("#topArrow, #bottomArrow, #centerArrow").append("svg").attr("width", function() {
         return getParentSize(this).w;
     }).attr("height", function() {
         return getParentSize(this).h;
     });
-
     createTopArrows();
     createBottomArrows();
-    $("line.arrow").hide();
+    if(!resize) {
+        $("line.arrow").hide();    
+    } else {
+        $.each(hiddenArrows, function(index, el) {
+            $(el).hide();
+        });
+    }
+    return hiddenArrows;
+}
+
+function drawCenterArrowsRaw(data, hiddenArrows) {
+    setCenterArrowBox();
+    createCenterArrows(data);
+    if(!hiddenArrows) {
+        $("#centerArrow .arrow").hide();    
+    } else {
+        $.each(hiddenArrows, function(index, el) {
+            if($(el).parents("#centerArrow").length != 0) {
+                $(el).hide();    
+            }
+        });
+    }
 }
 
 function moveToNextStep() {
     var node = null;
-    console.log("move");
+    //console.log("move");
     $("#date_"+iterStatus.currentStep).toggleClass("activeColor");
     if(steps[iterStatus.currentStep] && $.isFunction(steps[iterStatus.currentStep].deactivate)) {
         steps[iterStatus.currentStep].deactivate();
@@ -510,12 +530,29 @@ function playOrPause() {
      $("#playPause").toggleClass("glyphicon-pause");
 }
 
+function onWindowResize() {
+    setElementsSize();
+    var hiddenArrows = createSvgNodes(true);
+    if($.isFunction(drawCenterArrows)) {
+        drawCenterArrows(hiddenArrows);    
+    }
+}
+
+function setElementsSize() {
+    var containerWidth = $("#cameraSenato").width(),
+        commissioniWidth = $(".commissioni").outerWidth(true)*$(".commissioni").length;
+    $("#middle").width(containerWidth-commissioniWidth-25);
+}
+
 $(function() {
 	$(".commissioni").css({opacity: 0 });
     $("#nextStep").click(moveToNextStep);
     $("#prevStep").click(moveToPrevStep);
     $("#playPause").click(playOrPause);
     
+    setElementsSize();
 	createSvgNodes();
 	init();
+	
+	$( window ).resize(onWindowResize);
 });
