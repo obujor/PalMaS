@@ -52,6 +52,7 @@ html {
 #cameraSenato {
 	margin:auto;
 	min-width: 970px;
+	max-width: 1200px;
 }
 
 fieldset {

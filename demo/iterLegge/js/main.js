@@ -516,18 +516,20 @@ function moveToPrevStep(onlyDeactivate) {
 }
 
 function playOrPause() {
-     if($("#playPause").is(".glyphicon-repeat")) {
-         $("#playPause").toggleClass("glyphicon-repeat");
-         clearStatus();
-         playInterval = setInterval(moveToNextStep, 1000);
-     } else if($("#playPause").is(".glyphicon-pause")) {         clearInterval(playInterval);
-     } else {
-        moveToNextStep();
-        playInterval = setInterval(moveToNextStep, 1000);
-     }
-     
-     $("#playPause").toggleClass("glyphicon-play");
-     $("#playPause").toggleClass("glyphicon-pause");
+	if($("#playPause").is(".glyphicon-repeat")) {
+		$("#playPause").removeClass("glyphicon-repeat");
+		$("#playPause").addClass("glyphicon-pause");
+		clearStatus();
+		playInterval = setInterval(moveToNextStep, 1000);
+	} else if($("#playPause").is(".glyphicon-pause")) {
+		$("#playPause").removeClass("glyphicon-pause");
+		$("#playPause").addClass("glyphicon-play");		clearInterval(playInterval);
+	} else {
+		$("#playPause").removeClass("glyphicon-play");
+		$("#playPause").addClass("glyphicon-pause");
+		moveToNextStep();
+		playInterval = setInterval(moveToNextStep, 1000);
+	}
 }
 
 function onWindowResize() {
