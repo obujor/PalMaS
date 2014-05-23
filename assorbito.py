@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import csv
 import igraph as G
 from SPARQLWrapper import SPARQLWrapper, JSON
@@ -16,12 +19,50 @@ sparql = SPARQLWrapper("http://dati.senato.it/sparql")
 g = G.Graph(directed=True)
 
 # ddl e legislatura
-maxIdDdl = 0
+maxIdDdl = -1
+idddlList=[]
 
 Found = True
 
 while Found:
     print "chunk offset %s" % (maxIdDdl)
+    q_idddl = """PREFIX osr: <http://dati.senato.it/osr/>
+    SELECT DISTINCT ?idddl
+    {
+    ?iterDdl a osr:IterDdl; osr:idDdl ?idddl.
+    ?ddl a osr:Ddl; osr:idDdl ?idddl; osr:legislatura ?legislatura
+
+    FILTER (?legislatura = %s)
+    FILTER (?idddl > %s)
+    }
+    ORDER BY ?idddl
+    LIMIT 1000
+    """ % (LEGISLATURA,maxIdDdl)
+
+    sparql.setQuery(q_idddl)
+    sparql.setReturnFormat(JSON)
+    results = sparql.query().convert()
+
+    if results["results"]["bindings"]:
+        print "GOT %d ROWS" % len(results["results"]["bindings"])
+        for result in results["results"]["bindings"]:
+            idddlList.append(result['idddl']['value'])
+
+        maxIdDdl = max(idddlList)
+
+    else:
+        Found = False
+
+
+CHUNK=1000
+idddlList = sorted(idddlList)
+while idddlList:
+    idddlChunk = idddlList[:CHUNK]
+    idddlList = idddlList[CHUNK:]
+    minIdddl = min(idddlChunk)
+    maxIdddl = max(idddlChunk)
+
+    print "idddl [%s,%s]" % (minIdddl,maxIdddl)
     q_sequenza_fasi = """PREFIX osr: <http://dati.senato.it/osr/>
     SELECT DISTINCT ?idddl ?iterDdl ?progrFase ?codiceFase ?dataStato ?dataPresentazione
     {
@@ -29,10 +70,10 @@ while Found:
     ?fase osr:progrIter ?progrFase; osr:ddl ?ddl.
     ?ddl osr:fase ?codiceFase; osr:dataStatoDdl ?dataStato; osr:dataPresentazione ?dataPresentazione;
     osr:legislatura %s.
-    FILTER (?idddl > %s)
+    FILTER (?idddl >= %s AND ?idddl <= %s)
     }
     ORDER BY ?ddl ?progrFase
-    """ % (LEGISLATURA,maxIdDdl)
+    """ % (LEGISLATURA,minIdddl, maxIdddl)
 
     sparql.setQuery(q_sequenza_fasi)
     sparql.setReturnFormat(JSON)
@@ -56,10 +97,6 @@ while Found:
                 faseSucc = fasiIter[i+1]
                 g.add_edge(fasePrec, faseSucc, iterDdl=iterDdl)
 
-        maxIdDdl = max(g.vs['idddl'])
-
-    else:
-        Found = False
 
 q_assorbimento = """PREFIX osr: <http://dati.senato.it/osr/>
 SELECT DISTINCT  ?codiceFaseAssorbito  ?codiceFaseAssorbente 
