@@ -160,6 +160,7 @@ fieldset.commissDate legend {
     color: black;
     border: 5px solid #ddd;
     width: 50%;
+    min-width: 300px;
     margin:auto;
     border-radius: 5px !important;
 }
@@ -184,7 +185,7 @@ legend.active {
 	margin-top: 100px;
 }
 
-#proposta .data {
+#proposta .data, #approvazione .data {
 	display:block;
 	font-size: 0.7em;
 }
@@ -303,3 +304,28 @@ marker#arrow {
 	color: #5CB85C !important;
 }
 
+.badge {
+	display: block;
+	margin-top: 10px;
+	margin-left: -20px;
+	width: 25px;
+	height: 25px;
+	border-radius: 50% !important;
+	background: white !important;
+	-webkit-transform: rotate(45deg) !important;
+    -moz-transform: rotate(45deg) !important;
+    -o-transform: rotate(45deg) !important;
+    transform:rotate(45deg) !important;
+}
+
+.badge.info_C {
+	border: 2px solid #4373A2 !important;
+	background: url("../images/camera.gif") white no-repeat center !important;
+	background-size: 16px !important;
+}
+
+.badge.info_S {
+	border: 2px solid #9A1818 !important;
+	background: url("../images/senato.jpg") white no-repeat center !important;
+	background-size: 16px !important;
+}

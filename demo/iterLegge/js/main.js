@@ -1,32 +1,19 @@
-var map = {}, steps = [], iterStatus = {}, playInterval = false, drawCenterArrows = null;
+var steps = [], iterStatus = {}, playInterval = false, drawCenterArrows = null;
 
 function init() {
-	var dataUrl = "json/38775_giusto.json";
+	var dataUrl = "json/38775.json";
 	
 	$.getJSON(dataUrl, function(data) {
 		var row, dataProposta, container,
 			newData = {
-			    groups: {},
-			    list: []
+			    ddlList: data
 			};
 			
-		for(var i = 0; i < data.results.bindings.length; i++) {
-			row = data.results.bindings[i];
-			if(!newData.dataProposta) {
-				newData.dataProposta = row.dataPresentazione.value;
-				newData.nameProposta = row.ramo.value+row.numeroFase.value;
-				newData.sourceProposta = row.ramo.value;
-			}
-			newData.groups[row.progrIter.value] = newData.groups[row.progrIter.value] || [];
-			newData.groups[row.progrIter.value].push(row);
-			newData.list.push(row);
-		}
+		newData.dataProposta = data[0].dataPresentazione;
+        newData.nameProposta = data[0].fase;
+        newData.sourceProposta = data[0].ramo;
 		
 		initSteps(newData);
-		
-		$(document).on('click','.itemClick',function(){
-		   showDetails(map[$(this).attr("id")], this);
-		});
 	});
 }
 
@@ -37,19 +24,39 @@ function initSteps(data) {
         deactivate: function() {
             $("#proposta").toggleClass("active");
         },
+        infoCls: "info_"+data.sourceProposta,
         displayDate: data.dataProposta,
         displayInfo: "DDL proposto il "+data.dataProposta
     };
     
-    for(var group in data.groups) {
+    $.each(data.ddlList, function(index, ddl) {
+        var dateStato = new Date(ddl.dataStato).getTime(),
+            aDates = Object.keys(ddl.assegnazioni).sort(function(a, b) {
+            return new Date(a).getTime() > new Date(b).getTime();
+        }), prevDates = aDates.filter(function(a) { return new Date(a).getTime() < dateStato;}),
+            nextDates = aDates.filter(function(a) {return prevDates.indexOf(a) == -1;}),
+            addMiniStep = function(i, date) {
+                steps.push({
+                    activate: $.proxy(actionMiniStep, this, ddl, date, steps.length),
+                    deactivate: $.proxy(deactivateMiniStep, this, ddl, date, steps.length),
+                    displayDate: date,
+                    infoCls: "info_"+ddl.ramo,
+                    dateSmall: true
+                });
+            };
+        ddl.assegnazioniSortedDates = aDates;
+        $.each(prevDates, addMiniStep);
+        
         steps.push({
-            activate: $.proxy(actionGroup, this, data.groups[group], steps.length, true),
-            deactivate: $.proxy(actionGroup, this, data.groups[group], steps.length),
-            displayDate: data.groups[group][0].dataStato.value,
-            displayInfo: data.groups[group][0].stato.value,
-            infoCls: "info_"+data.groups[group][0].ramo.value
+            activate: $.proxy(actionGroup, this, ddl, steps.length, true),
+            deactivate: $.proxy(actionGroup, this, ddl, steps.length),
+            displayDate: ddl.dataStato,
+            displayInfo: ddl.stato,
+            infoCls: "info_"+ddl.ramo
         });
-    }
+        $.each(nextDates, addMiniStep);     
+    });
+    
     
     var approvedDate = isApproved(data);
     steps.push({
@@ -59,56 +66,30 @@ function initSteps(data) {
         infoCls: (approvedDate) ? "alert-success" : "alert-danger"
     });
     
+    var margin = ($("#statusDateButtons").width()/steps.length) - 15;
     
-    var dateList = steps.filter(function(el) {return el.displayDate;}).map(function(el) {return el.displayDate;});
-    var completeDateList = [];
-    
-    /*var perc = ((100/steps.length)*(i+1));
-    var cls = (steps[i].infoCls) ? steps[i].infoCls : "alert-success";
-    $("#statusDateButtons").append('<span class="dateWidget '+cls+'" id="date_'+i+'" style="margin-left: '+margin*(i+1)+'px;">'+steps[i].displayDate+"</span>");*/
-    for(var i=0; i<dateList.length; i++) {
-        var date = dateList[i], nextDate = dateList[i+1];
-        completeDateList.push({value: date, big: true});
-        if(date && nextDate) {
-            var dates = [];
-            var records = data.list.filter(function(item) {
-                var dateItem = new Date(item.dataAssegnazione.value).getTime();
-                var isValid = (dateItem > new Date(date).getTime() && dateItem < new Date(nextDate).getTime());
-                if(isValid && dates.indexOf(item.dataAssegnazione.value) == -1) {
-                    dates.push(item.dataAssegnazione.value);
-                    completeDateList.push({value: item.dataAssegnazione.value});
-                }
-                return isValid;
-            });
-        }
-    }
-    
-    var newSteps = [];
-    
-    $.each(completeDateList, function(index, date) {
-        var oldStep = steps.filter(function(el) {return el.displayDate == date.value;});
-        if(oldStep.length) {
-            oldStep.every(function(el) {
-                if (newSteps.indexOf(el) == -1) {
-                    newSteps.push(el);
-                }
-                return el;
-            }); 
-        } else {
-            newSteps.push({displayDate: date.value, dateSmall: true});
-        }
-    });
-    var margin = ($("#statusDateButtons").width()/newSteps.length) - 15;
-    
-    $.each(newSteps, function(index, step) {
-        var nextBig = newSteps.filter(function(el, elI) {if(elI > index && !el.dateSmall) return true;})[0];
-        step.infoCls = (!step.infoCls && step.dateSmall) ? (nextBig) ? nextBig.infoCls : null : step.infoCls;
-        var cls = (step.infoCls) ? step.infoCls : "alert-success";
+    $.each(steps, function(index, step) {
+        var cls = (step.infoCls) ? step.infoCls : "alert-success",
+            prevStep = steps[index-1],
+            badge = "";
         cls = (step.dateSmall) ? cls+" miniStep" : cls;
-        $("#statusDateButtons").append('<span class="dateWidget '+cls+'" id="date_'+i+'" style="margin-left: '+margin*(index+1)+'px;">'+step.displayDate+"</span>");
+        if(!prevStep || (prevStep.infoCls && prevStep.infoCls != step.infoCls)) {
+            step.changedRamo = true;
+            if(index != steps.length-1) {
+                badge = '<span class="badge '+step.infoCls+'"></span>';    
+            }
+        }
+        step.datePos = Math.round(margin*(index+1));
+        step.dateId = "date_"+index;
+        $("#statusDateButtons").append('<span class="dateWidget '+cls+'" id="'+step.dateId+'" style="margin-left: '+step.datePos+'px;">'+badge+step.displayDate+"</span>");
     });
     
-    steps = newSteps;
+    $(document).on('click','.dateWidget',function() {
+        var stepIndex = parseInt($(this).attr("id").replace( /^\D+/g, ''));
+        if(steps[stepIndex] !== undefined) {
+            goToStep(stepIndex); 
+        }
+    });
 }
 
 function clearStatus() {
@@ -120,14 +101,23 @@ function clearStatus() {
     $("#topArrow line").hide();
     $("#centerArrow line").hide();
     $("#camera .items, #senato .items").empty();
-    $("#proposta .data").html("");
+    $("#proposta .data, #approvazione .data").html("");
     $("#progressBarWidget").attr("aria-valuenow", 0).css("width", "0%");
+    $(".commissioni").css({opacity: 0 });
+}
+
+function maybeShowCenterArrow(ddl, stepIndex) {
+    var id = ddl.numeroFase;
+    if(steps[stepIndex].changedRamo && $("#arrow_"+id).length) {
+        $("#arrow_"+id).fadeIn();    
+    }
 }
 
 function setApproveValue(data) {
-    var isApprovato = isApproved(data);
-    if(isApprovato) {
+    var isApprovatoData = isApproved(data);
+    if(isApprovatoData) {
         $("#approvazione").toggleClass("active");
+        $("#approvazione .data").html(isApprovatoData);
         $("#bottomArrow line").fadeIn();
     } else {
         $("#approvazione").toggleClass("notApproved");
@@ -137,72 +127,79 @@ function setApproveValue(data) {
 }
 
 function isApproved(data) {
-    for(var group in data.groups) {
-        for(var i = 0; i < data.groups[group].length; i++) {
-            if(data.groups[group][i].stato.value.match("approvato definitivamente")) {
-                return data.groups[group][i].dataStato.value;
-            }
+    for(var i = 0; i<data.ddlList.length; i++) {
+        if(data.ddlList[i].stato.match("approvato definitivamente")) {
+            return data.ddlList[i].dataStato;
         }
     }
     return false;
 }
 
-function actionGroup(group, steps, activate) {
-    var id = group[0].numeroFase.value,
+function actionMiniStep(ddl, date, stepIndex) {
+    var container = showDetails(ddl),
+        legend = $(container+ " #"+date),
+        parentId = $("#"+ddl.numeroFase).parents("fieldset").attr("id");
+    legend.toggleClass("active");
+    $("#"+ddl.numeroFase).addClass("active");
+    $("#"+parentId+ " legend").addClass("active");
+    maybeShowCenterArrow(ddl, stepIndex);
+    return container+ " #"+date;
+}
+
+function deactivateMiniStep(ddl, date) {
+    var container = "#commissioni"+ddl.ramo,
+        parentId = $("#"+ddl.numeroFase).parents("fieldset").attr("id");
+    $(container).css({opacity: 0 });
+    $("#"+parentId+ " legend").removeClass("active");
+}
+
+function actionGroup(ddl, stepIndex, activate) {
+    var id = ddl.numeroFase,
         parentId = $("#"+id).parents("fieldset").attr("id");
     
-    if(steps == 1) {
-        $("#topArrow ."+parentId).fadeIn();
+    if(activate) {
+        maybeShowCenterArrow(ddl, stepIndex);
+        $("#"+id).addClass("active");
+        $("#"+parentId+ " legend").addClass("active");
+    } else {
+        $("#"+id).removeClass("active");
+        $("#"+parentId+ " legend").removeClass("active");
     }
     
-    if(activate) {
-        if($("#arrow_"+id).length) {
-            $("#arrow_"+id).fadeIn();    
-        }
-    } else {
-    }
-    $("#"+parentId+ " legend").toggleClass("active");
-    $("#"+id).toggleClass("active");
     return "#"+id;
 }
 
 function fillInitialData(data) {
     $("#proposta").toggleClass("active");
     $("#proposta .data").html(data.dataProposta+" "+data.nameProposta);
+    $("#topArrow #top_arrow_"+data.sourceProposta).fadeIn();
+    
     var camera = [],
         senato = [],
-        sequence = [],
-        groupByDate = {};
+        sequence = [];
         
-    for(var group in data.groups) {
+    $.each(data.ddlList, function(index, ddl) {
         var obj = {};
-        obj.nameF = data.groups[group][0].ramo.value+" "+data.groups[group][0].numeroFase.value;
-        obj.displayName = group+". "+obj.nameF;
-        obj.id = data.groups[group][0].numeroFase.value;
-        obj.group = data.groups[group];
-        groupByDate[obj.id] = groupByDate[obj.id] || {};
-        for(var i=0; i<data.groups[group].length; i++) {
-            var asgnObj = data.groups[group][i];
-            groupByDate[obj.id][asgnObj.dataAssegnazione.value] = groupByDate[obj.id][asgnObj.dataAssegnazione.value] || [];
-            groupByDate[obj.id][asgnObj.dataAssegnazione.value].push(asgnObj);
-        }
-        if((data.groups[group][0].ramo.value == "C")) {
+        obj.nameF = ddl.fase;
+        obj.displayName = ddl.progressivoIter+". "+obj.nameF;
+        obj.id = ddl.numeroFase;
+        obj.ddlObj = ddl;
+
+        if((ddl.ramo == "C")) {
             obj.container = "#camera";
             obj.type = "camera";
         } else {
             obj.container = "#senato";
             obj.type = "senato";
         }
-        sequence.push(obj);
-    }
-    
+        sequence.push(obj);   
+    });
+        
     for(var i = 0; i < sequence.length; i++) {
         var obj = sequence[i];
         $("#camera .items, #senato .items").append('<div></div>');
-        addPropostaItem(obj.container+" .items>div:nth-child("+(i+1)+")", obj.displayName, obj.id, obj.group, groupByDate[obj.id]);
+        addPropostaItem(obj.container+" .items>div:nth-child("+(i+1)+")", obj.displayName, obj.id, obj.ddlObj);
     }
-    
-    GR = groupByDate;
     
     drawCenterArrows = $.proxy(drawCenterArrowsRaw, this, sequence);
     drawCenterArrows();
@@ -224,33 +221,33 @@ function setCenterArrowBox() {
     });
 }
 
-function showDetails(data, el) {
-    console.log(data);
-	container = "#commissioni"+data.group[0].ramo.value;
+function showDetails(ddl) {
+	container = "#commissioni"+ddl.ramo;
 	var elements = [];
 	$(container).animate({ opacity: 1 });
 	$(container+" .items").html("");
-	
-	for(var date in data.groupDate) {
+
+	$.each(ddl.assegnazioniSortedDates, function(index, date) {
 	    var list = "";
-	    for(var i = 0; i < data.groupDate[date].length; i++) {
-	        var listItem = '<li>'+data.groupDate[date][i].label.value+'</li>';
+        for(var i = 0; i < ddl.assegnazioni[date].length; i++) {
+            var listItem = '<li>'+ddl.assegnazioni[date][i].label+'</li>';
             if(list.indexOf(listItem) == -1) {
                 list += listItem;
             }
         }
-	    $(container+" .items").append('<fieldset class="commissDate"><legend>'+date+'</legend><ul>'+list+'</ul></fieldset>');
-	}
+        $(container+" .items").append('<fieldset class="commissDate"><legend id="'+date+'">'+date+'</legend><ul>'+list+'</ul></fieldset>');
+	});
+	return container+" .items";
 }
 
-function addPropostaItem(container, name, id, group, groupByDate) {
-	var item = '<button id="'+id+'" type="button" class="btn-circle itemClick">'+name+'</button>';
-	 
-	map[id] = {group: group, groupDate: groupByDate};
-	
+function addPropostaItem(container, name, id, ddl) {
+	var item = '<button id="'+id+'" type="button" class="btn-circle itemClick">'+name+'</button>',
+	    buttonSelector = container+" #"+id;
+    
 	$(container).append(item);
-	
-	return item;
+	$(buttonSelector).click(function() {
+	    showDetails(ddl);
+	});
 }
 
 function getParentSize(el) {
@@ -321,7 +318,7 @@ function createTopArrows() {
             x : posSenato.left+(cameraWidth/2),
             y : height - padding.bottomY
         }],
-        links = [{s:0,t:1, cls: "camera", id: "top_camera_arrow"}, {s:0,t:2,  cls: "senato", id: "top_senato_arrow"}];
+        links = [{s:0,t:1, id: "top_arrow_C"}, {s:0,t:2, id: "top_arrow_S"}];
 
     createArrows(svg, nodes, links);
 }
@@ -448,7 +445,6 @@ function drawCenterArrowsRaw(data, hiddenArrows) {
 
 function moveToNextStep() {
     var node = null;
-    //console.log("move");
     $("#date_"+iterStatus.currentStep).toggleClass("activeColor");
     if(steps[iterStatus.currentStep] && $.isFunction(steps[iterStatus.currentStep].deactivate)) {
         steps[iterStatus.currentStep].deactivate();
@@ -463,12 +459,8 @@ function moveToNextStep() {
             }
     }
     
-    var perc = ((100/steps.length)*(iterStatus.currentStep+1));
-    
-    $("#progressBarWidget").attr("aria-valuenow", perc).css("width", perc+"%");
-    
     $("#date_"+iterStatus.currentStep).toggleClass("activeColor");
-    
+    setProgressBarValue(iterStatus.currentStep);
     var info = "";
     if(steps[iterStatus.currentStep] && steps[iterStatus.currentStep].displayInfo) {
         info = "<strong>"+steps[iterStatus.currentStep].displayInfo+"</strong>";   
@@ -485,10 +477,36 @@ function moveToNextStep() {
     
     $("#prevStep").removeClass("disabled");
     
-    if(perc > 100) {
+    if(iterStatus.currentStep+1 >= steps.length) {
         finishMoving();
     } else {
         $("#nextStep").removeClass("disabled");
+    }
+}
+
+function setProgressBarValue(stepIndex) {
+    var step = steps[stepIndex];
+    if(stepIndex+1 == steps.length) {
+        $("#progressBarWidget").css("width", "100%");
+    } else if(step && step.datePos) {
+        var width  = step.datePos + ($("#"+step.dateId).width()/2);
+        $("#progressBarWidget").css("width", width+"px");    
+    }
+}
+
+function goToStep(step) {
+    var diff = step - iterStatus.currentStep;
+    if(diff > 0) {
+        while(diff) {
+            moveToNextStep();
+            diff--;
+        }
+    } else {
+        clearStatus();
+        while(step>-1) {
+            moveToNextStep();
+            step--;
+        }
     }
 }
 
@@ -501,18 +519,7 @@ function finishMoving() {
 }
 
 function moveToPrevStep(onlyDeactivate) {
-    if(steps[iterStatus.currentStep] && $.isFunction(steps[iterStatus.currentStep].deactivate)) {
-        steps[iterStatus.currentStep].deactivate();
-    }
-    iterStatus.currentStep--;
-    if(!onlyDeactivate) {
-        if(steps[iterStatus.currentStep] && $.isFunction(steps[iterStatus.currentStep].activate)) {
-            steps[iterStatus.currentStep].activate();
-        }    
-    }
-    
-    var perc = ((100/steps.length)*(iterStatus.currentStep+1));
-    $("#progressBarWidget").attr("aria-valuenow", perc).css("width", perc+"%");
+    goToStep(iterStatus.currentStep-1);
 }
 
 function playOrPause() {
@@ -520,7 +527,7 @@ function playOrPause() {
 		$("#playPause").removeClass("glyphicon-repeat");
 		$("#playPause").addClass("glyphicon-pause");
 		clearStatus();
-		playInterval = setInterval(moveToNextStep, 1000);
+		playInterval = setInterval(moveToNextStep, 1500);
 	} else if($("#playPause").is(".glyphicon-pause")) {
 		$("#playPause").removeClass("glyphicon-pause");
 		$("#playPause").addClass("glyphicon-play");		clearInterval(playInterval);
@@ -528,7 +535,7 @@ function playOrPause() {
 		$("#playPause").removeClass("glyphicon-play");
 		$("#playPause").addClass("glyphicon-pause");
 		moveToNextStep();
-		playInterval = setInterval(moveToNextStep, 1000);
+		playInterval = setInterval(moveToNextStep, 1500);
 	}
 }
 
