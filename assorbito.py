@@ -39,7 +39,7 @@ def add_assorbiti(g, LEGISLATURA, sparql):
         if results["results"]["bindings"]:
             print "GOT %d ROWS" % len(results["results"]["bindings"])
             for result in results["results"]["bindings"]:
-                idddlList.append(result['idddl']['value'])
+                idddlList.append(int(result['idddl']['value']))
 
             maxIdDdl = max(idddlList)
 
@@ -183,7 +183,7 @@ def main():
     nodes=[{'name':v['name']} for v in g.vs]
     links=[{'source':e.source,'target':e.target,'value':1.0} for e in g.es]
 
-    g.write('assorbito.pickle')
+    g.write('assorbito_'+str(LEGISLATURA)+'leg.pickle')
 
     from IPython import embed; embed()
 
@@ -191,7 +191,7 @@ def main():
 
     output = {'nodes':nodes,'links':links}
 
-    with open('assorbito.json','w+') as f:
+    with open('assorbito_'+str(LEGISLATURA)+'leg.json','w+') as f:
         json.dump(output,f)
 
 
