@@ -74,13 +74,15 @@ def add_testo_unif(g):
         if results["results"]["bindings"]:
             print "GOT %d ROWS" % len(results["results"]["bindings"])
             for result in results["results"]["bindings"]:
-                g.add_vertex(name=result['codiceFase']['value'],
-                             idddl=result['idddl']['value'],
-                             iterDdl=result['iterDdl']['value'],
-                             progrFase=result['progrFase']['value'],
-                             dataStato=result['dataStato']['value'],
-                             dataPresentazione=result['dataPresentazione']['value']
-                             )
+                nodeName=result['codiceFase']['value'],
+                if len(g.vs.select(name = nodeName)) == 0:
+                    g.add_vertex(name = nodeName,
+                            idddl=result['idddl']['value'],
+                            iterDdl=result['iterDdl']['value'],
+                            progrFase=result['progrFase']['value'],
+                            dataStato=result['dataStato']['value'],
+                            dataPresentazione=result['dataPresentazione']['value']
+                            )
     #from IPython import embed; embed()
 
     for iterDdl in set(g.vs['iterDdl']):
@@ -141,7 +143,7 @@ def add_testo_unif(g):
         g.add_edge(vertexFrom,vertexTo,tipo='assorbimento', progrIterAssorbente=progrIterAssorbente)
 
 
-def add_assorbiti(g):
+def add_assorbiti(g, LEGISLATURA, sparql):
 
     # ddl e legislatura
     maxIdDdl = -1
@@ -287,6 +289,7 @@ def main():
 
     g = G.Graph(directed=True)
 
+    add_assorbiti(g, LEGISLATURA, sparql)
 
     for v in g.vs(_outdegree_gt=1):
         ev = g.es(_source=v.index)
