@@ -1,6 +1,10 @@
 var steps = [], iterStatus = {}, playInterval = false, drawCenterArrows = null;
 
 function init(data) {
+	data = data.sort(function(a, b) {
+		return new Date(a.dataStato).getTime() > new Date(b.dataStato).getTime();
+	});
+
 	var newData = {
 			ddlList: data
 		};
@@ -105,7 +109,7 @@ function clearStatus() {
 }
 
 function maybeShowCenterArrow(ddl, stepIndex) {
-    var id = ddl.numeroFase;
+    var id = "btn_"+ddl.idfase;
     if(steps[stepIndex].changedRamo && $("#arrow_"+id).length) {
         $("#arrow_"+id).fadeIn();    
     }
@@ -136,9 +140,9 @@ function isApproved(data) {
 function actionMiniStep(ddl, date, stepIndex) {
     var container = showDetails(ddl),
         legend = $(container+ " #"+date),
-        parentId = $("#"+ddl.numeroFase).parents("fieldset").attr("id");
+        parentId = $("#cms_"+ddl.idfase).parents("fieldset").attr("id");
     legend.toggleClass("active");
-    $("#"+ddl.numeroFase).addClass("active");
+    $("#cms_"+ddl.idfase).addClass("active");
     $("#"+parentId+ " legend").addClass("active");
     maybeShowCenterArrow(ddl, stepIndex);
     return container+ " #"+date;
@@ -146,13 +150,13 @@ function actionMiniStep(ddl, date, stepIndex) {
 
 function deactivateMiniStep(ddl, date) {
     var container = "#commissioni"+ddl.ramo,
-        parentId = $("#"+ddl.numeroFase).parents("fieldset").attr("id");
+        parentId = $("#cms_"+ddl.idfase).parents("fieldset").attr("id");
     $(container).css({opacity: 0 });
     $("#"+parentId+ " legend").removeClass("active");
 }
 
 function actionGroup(ddl, stepIndex, activate) {
-    var id = ddl.numeroFase,
+    var id = "btn_"+ddl.idfase,
         parentId = $("#"+id).parents("fieldset").attr("id");
     
     if(activate) {
@@ -180,7 +184,7 @@ function fillInitialData(data) {
         var obj = {};
         obj.nameF = ddl.fase;
         obj.displayName = ddl.progressivoIter+". "+obj.nameF;
-        obj.id = ddl.numeroFase;
+        obj.id = "btn_"+ddl.idfase;
         obj.ddlObj = ddl;
 
         if((ddl.ramo == "C")) {
@@ -443,7 +447,7 @@ function drawCenterArrowsRaw(data, hiddenArrows) {
     }
 }
 
-function moveToNextStep() {
+function moveToNextStep(noScroll) {
     var node = null;
     $("#date_"+iterStatus.currentStep).toggleClass("activeColor");
     if(steps[iterStatus.currentStep] && $.isFunction(steps[iterStatus.currentStep].deactivate)) {
@@ -452,7 +456,7 @@ function moveToNextStep() {
     iterStatus.currentStep++;
     if(steps[iterStatus.currentStep] && $.isFunction(steps[iterStatus.currentStep].activate)) {
         node =  steps[iterStatus.currentStep].activate();
-        if(node) {
+        if(!noScroll && node) {
                 $('html, body').animate({
                     scrollTop: $(node).offset().top - ($("#topNavBar").height() + 20)
                 }, 500);
@@ -495,16 +499,19 @@ function setProgressBarValue(stepIndex) {
 }
 
 function goToStep(step) {
-    var diff = step - iterStatus.currentStep;
+    var diff = step - iterStatus.currentStep,
+		noScroll = false;
     if(diff > 0) {
         while(diff) {
-            moveToNextStep();
+			noScroll = (diff == 1) ? false : true;
+            moveToNextStep(noScroll);
             diff--;
         }
     } else {
         clearStatus();
         while(step>-1) {
-            moveToNextStep();
+			noScroll = (step == 1) ? false : true;
+            moveToNextStep(noScroll);
             step--;
         }
     }
@@ -615,42 +622,46 @@ function createTable(data) {
 	
 	$("#iterVisualization").hide();
 	
-	$.each(data.ddl, function(index, ddl) {
-		dataset.push([ddl.fase, ddl.titolo, ddl.dataStato]);
-	});
+	if($("#selectTable").length) {
+		$("#selectData").fadeIn();
+	} else {
+		$.each(data.ddl, function(index, ddl) {
+			dataset.push([ddl.fase, ddl.titolo, ddl.dataStato]);
+		});
 
-	$('#selectData').html( '<h3>Seleziona un elemento per visualizzare il procedimento legislativo</h3><table cellpadding="0" cellspacing="0" border="0" class="table table-striped table-bordered" id="selectTable"></table>' );
+		$('#selectData').html( '<h3>Seleziona un elemento per visualizzare il procedimento legislativo</h3><table cellpadding="0" cellspacing="0" border="0" class="table table-striped table-bordered" id="selectTable"></table>' );
 
-	table = $('#selectTable').dataTable( {
-		"data": dataset,
-		"language": {
-			"url": "json/dataTables.italian.json"
-		},
-		"bLengthChange": false,
-		"iDisplayLength": 15	,
-		"columns": [
-			{ "title": "Numero" },
-			{ "title": "Titolo" },
-			{ "title": "Data" }
-		],
-		"order": [[ 2, "desc" ]],
-		"aoColumnDefs": [
-		  { "sWidth": "80px", "aTargets": [ 2 ] }
-		],
-		"fnInitComplete": function(oSettings, json) {
-			$(".loader").fadeOut();
-			$("#selectData").fadeIn();
-		},
-		"fnDrawCallback": function(){
-			  $('#selectTable td').bind('mouseenter', function () { $(this).parent().children().each(function(){$(this).addClass('highlight');}); });
-			  $('#selectTable td').bind('mouseleave', function () { $(this).parent().children().each(function(){$(this).removeClass('highlight');}); });
-		}
-	} );
-	
-	$('#selectTable tbody').on( 'click', 'tr', function () {
-		var name = table.fnGetData(this)[0];
-		window.location.hash = name;
-	});
+		table = $('#selectTable').dataTable( {
+			"data": dataset,
+			"language": {
+				"url": "json/dataTables.italian.json"
+			},
+			"bLengthChange": false,
+			"iDisplayLength": 15	,
+			"columns": [
+				{ "title": "Numero" },
+				{ "title": "Titolo" },
+				{ "title": "Data" }
+			],
+			"order": [[ 2, "desc" ]],
+			"aoColumnDefs": [
+			  { "sWidth": "80px", "aTargets": [ 2 ] }
+			],
+			"fnInitComplete": function(oSettings, json) {
+				$(".loader").fadeOut();
+				$("#selectData").fadeIn();
+			},
+			"fnDrawCallback": function(){
+				  $('#selectTable td').bind('mouseenter', function () { $(this).parent().children().each(function(){$(this).addClass('highlight');}); });
+				  $('#selectTable td').bind('mouseleave', function () { $(this).parent().children().each(function(){$(this).removeClass('highlight');}); });
+			}
+		} );
+		
+		$('#selectTable tbody').on( 'click', 'tr', function () {
+			var name = table.fnGetData(this)[0];
+			window.location.hash = name;
+		});
+	}
 }
 
 function initTableOrIter(data) {
