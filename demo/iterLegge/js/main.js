@@ -676,7 +676,7 @@ function initTableOrIter(data) {
 }
 
 function initSelectionData() {
-	var dataUrl = "json/dataset.json";
+	var dataUrl = "json/dataset_17.json";
 	
 	$.getJSON(dataUrl, function(data) {
 		initTableOrIter(data);
