@@ -428,8 +428,10 @@ function createSvgNodes(resize) {
 }
 
 function drawCenterArrowsRaw(data, hiddenArrows) {
-    setCenterArrowBox();
-    createCenterArrows(data);
+	if(data.length > 1) {
+		setCenterArrowBox();
+		createCenterArrows(data);
+	}
     if(!hiddenArrows) {
         $("#centerArrow .arrow").hide();    
     } else {
@@ -551,19 +553,25 @@ function setElementsSize() {
     $("#middle").width(containerWidth-commissioniWidth-25);
 }
 
+function setIterInitialState() {
+	$("#statusDateButtons").empty();
+	steps = [];
+	clearStatus();
+	$("#statusBarInfo").attr("class", "alert alert-warning")
+					  .html('<strong>Premi "Play" per visualizzare il procedimento legislativo, oppure premi i tasti avanti e indietro per navigarlo un passo alla volta</strong>');
+	$("#playPause").attr("class", "btn btn-default navbar-btn glyphicon glyphicon-play");
+	$("#nextStep").removeClass("disabled");
+}
+
 function initIter(data) {
+	setIterInitialState();
 	$("#selectData").hide();
 	$("#iterVisualization").show();
 	$(".commissioni").css({opacity: 0 });
-    $("#nextStep").click(moveToNextStep);
-    $("#prevStep").click(moveToPrevStep);
-    $("#playPause").click(playOrPause);
     
     setElementsSize();
 	createSvgNodes();
 	init(data);
-	
-	$( window ).resize(onWindowResize);
 }
 
 jQuery.fn.center = function () {
@@ -586,14 +594,73 @@ function normalizeCommissioni(commissioni, ddl) {
 
 function prepareData(name, data) {
 	var idDdl = data.ddl.filter(function(a) {return a.fase == name;}).map(function(a) {return a.idddl;})[0],
-		ddlGroup = [];
-	
+		ddlGroup = [], found = false;
+
 	if(idDdl) {
 		ddlGroup = data.ddl.filter(function(a) {return a.idddl == idDdl;});
 		ddlGroup = ddlGroup.map($.proxy(normalizeCommissioni, this, data.commissioni));
 		if(ddlGroup.length) {
 			initIter(ddlGroup);
+			found = true;
 		}
+	}
+	
+	if(!found) {
+		createTable(data);
+	}
+}
+
+function createTable(data) {
+	var dataset = [], table;
+	
+	$("#iterVisualization").hide();
+	
+	$.each(data.ddl, function(index, ddl) {
+		dataset.push([ddl.fase, ddl.titolo, ddl.dataStato]);
+	});
+
+	$('#selectData').html( '<h3>Seleziona un elemento per visualizzare il procedimento legislativo</h3><table cellpadding="0" cellspacing="0" border="0" class="table table-striped table-bordered" id="selectTable"></table>' );
+
+	table = $('#selectTable').dataTable( {
+		"data": dataset,
+		"language": {
+			"url": "json/dataTables.italian.json"
+		},
+		"bLengthChange": false,
+		"iDisplayLength": 15	,
+		"columns": [
+			{ "title": "Numero" },
+			{ "title": "Titolo" },
+			{ "title": "Data" }
+		],
+		"order": [[ 2, "desc" ]],
+		"aoColumnDefs": [
+		  { "sWidth": "80px", "aTargets": [ 2 ] }
+		],
+		"fnInitComplete": function(oSettings, json) {
+			$(".loader").fadeOut();
+			$("#selectData").fadeIn();
+		},
+		"fnDrawCallback": function(){
+			  $('#selectTable td').bind('mouseenter', function () { $(this).parent().children().each(function(){$(this).addClass('highlight');}); });
+			  $('#selectTable td').bind('mouseleave', function () { $(this).parent().children().each(function(){$(this).removeClass('highlight');}); });
+		}
+	} );
+	
+	$('#selectTable tbody').on( 'click', 'tr', function () {
+		var name = table.fnGetData(this)[0];
+		window.location.hash = name;
+	});
+}
+
+function initTableOrIter(data) {
+	var ddlName;
+	if(window.location.hash) {
+		ddlName = window.location.hash.substring(1);
+		$(".loader").fadeOut();
+		prepareData(ddlName, data);
+	} else {		
+		createTable(data);
 	}
 }
 
@@ -601,43 +668,8 @@ function initSelectionData() {
 	var dataUrl = "json/dataset.json";
 	
 	$.getJSON(dataUrl, function(data) {
-		var dataset = [], table;
-
-		$.each(data.ddl, function(index, ddl) {
-			dataset.push([ddl.fase, ddl.titolo, ddl.dataStato]);
-		});
-
-		$('#selectData').html( '<h3>Seleziona un elemento per visualizzare il procedimento legislativo</h3><table cellpadding="0" cellspacing="0" border="0" class="table table-striped table-bordered" id="selectTable"></table>' );
- 
-		table = $('#selectTable').dataTable( {
-			"data": dataset,
-			"language": {
-                "url": "json/dataTables.italian.json"
-            },
-			"bLengthChange": false,
-			"iDisplayLength": 15	,
-			"columns": [
-				{ "title": "Numero" },
-				{ "title": "Titolo" },
-				{ "title": "Data" }
-			],
-			"order": [[ 2, "desc" ]],
-			"aoColumnDefs": [
-			  { "sWidth": "80px", "aTargets": [ 2 ] }
-			],
-			"fnInitComplete": function(oSettings, json) {
-				$(".loader").fadeOut();
-				$("#selectData").fadeIn();
-			},
-			"fnDrawCallback": function(){
-				  $('#selectTable td').bind('mouseenter', function () { $(this).parent().children().each(function(){$(this).addClass('highlight');}); });
-				  $('#selectTable td').bind('mouseleave', function () { $(this).parent().children().each(function(){$(this).removeClass('highlight');}); });
-			}
-		} );
-		
-		$('#selectTable tbody').on( 'click', 'tr', function () {
-			prepareData(table.fnGetData(this)[0], data);
-		});
+		initTableOrIter(data);
+		$(window).on('hashchange', $.proxy(initTableOrIter, this, data));
 	});
 }
 
@@ -645,5 +677,9 @@ $(function() {
 	$("#iterVisualization").hide();
 	$("#selectData").hide();
 	$(".loader").center();
+	$("#nextStep").click(moveToNextStep);
+    $("#prevStep").click(moveToPrevStep);
+    $("#playPause").click(playOrPause);
+    $( window ).resize(onWindowResize);
 	initSelectionData();
 });
