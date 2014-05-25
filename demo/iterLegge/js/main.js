@@ -629,7 +629,7 @@ function createTable(data) {
 			dataset.push([ddl.fase, ddl.titolo, ddl.dataStato]);
 		});
 
-		$('#selectData').html( '<h3>Seleziona un elemento per visualizzare il procedimento legislativo</h3><table cellpadding="0" cellspacing="0" border="0" class="table table-striped table-bordered" id="selectTable"></table>' );
+		$('#selectData').html( '<h2>Procedimenti legislativi della XVII legislatura</h2><h3>Seleziona un elemento per visualizzare il procedimento legislativo</h3><table cellpadding="0" cellspacing="0" border="0" class="table table-striped table-bordered" id="selectTable"></table>' );
 
 		table = $('#selectTable').dataTable( {
 			"data": dataset,
