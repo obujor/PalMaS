@@ -1,20 +1,15 @@
 var steps = [], iterStatus = {}, playInterval = false, drawCenterArrows = null;
 
-function init() {
-	var dataUrl = "json/38775.json";
-	
-	$.getJSON(dataUrl, function(data) {
-		var row, dataProposta, container,
-			newData = {
-			    ddlList: data
-			};
-			
-		newData.dataProposta = data[0].dataPresentazione;
-        newData.nameProposta = data[0].fase;
-        newData.sourceProposta = data[0].ramo;
+function init(data) {
+	var newData = {
+			ddlList: data
+		};
 		
-		initSteps(newData);
-	});
+	newData.dataProposta = data[0].dataPresentazione;
+	newData.nameProposta = data[0].fase;
+	newData.sourceProposta = data[0].ramo;
+
+	initSteps(newData);
 }
 
 function initSteps(data) {
@@ -58,13 +53,16 @@ function initSteps(data) {
     });
     
     
+    
     var approvedDate = isApproved(data);
-    steps.push({
-        activate: $.proxy(setApproveValue, this, data),
-        displayDate: approvedDate,
-        displayInfo: (approvedDate) ? "Approvato definitivamente" : "",
-        infoCls: (approvedDate) ? "alert-success" : "alert-danger"
-    });
+    if(approvedDate) {
+		steps.push({
+			activate: $.proxy(setApproveValue, this, data),
+			displayDate: approvedDate,
+			displayInfo: (approvedDate) ? "Approvato definitivamente" : "",
+			infoCls: (approvedDate) ? "alert-success" : "alert-danger"
+		});
+	}
     
     var margin = ($("#statusDateButtons").width()/steps.length) - 15;
     
@@ -230,7 +228,7 @@ function showDetails(ddl) {
 	$.each(ddl.assegnazioniSortedDates, function(index, date) {
 	    var list = "";
         for(var i = 0; i < ddl.assegnazioni[date].length; i++) {
-            var listItem = '<li>'+ddl.assegnazioni[date][i].label+'</li>';
+            var listItem = '<li>'+ddl.assegnazioni[date][i]+'</li>';
             if(list.indexOf(listItem) == -1) {
                 list += listItem;
             }
@@ -553,7 +551,9 @@ function setElementsSize() {
     $("#middle").width(containerWidth-commissioniWidth-25);
 }
 
-$(function() {
+function initIter(data) {
+	$("#selectData").hide();
+	$("#iterVisualization").show();
 	$(".commissioni").css({opacity: 0 });
     $("#nextStep").click(moveToNextStep);
     $("#prevStep").click(moveToPrevStep);
@@ -561,7 +561,89 @@ $(function() {
     
     setElementsSize();
 	createSvgNodes();
-	init();
+	init(data);
 	
 	$( window ).resize(onWindowResize);
+}
+
+jQuery.fn.center = function () {
+    this.css("position","absolute");
+    this.css("top", Math.max(0, (($(window).height() - $(this).outerHeight()) / 2) + 
+                                                $(window).scrollTop()) + "px");
+    this.css("left", Math.max(0, (($(window).width() - $(this).outerWidth()) / 2) + 
+                                                $(window).scrollLeft()) + "px");
+    return this;
+}
+
+function normalizeCommissioni(commissioni, ddl) {
+	for(var date in ddl.assegnazioni) {
+		$.each(ddl.assegnazioni[date], function(index, commissioneIndex) {
+			ddl.assegnazioni[date][index] = commissioni[commissioneIndex];
+		});
+	}
+	return ddl;
+}
+
+function prepareData(name, data) {
+	var idDdl = data.ddl.filter(function(a) {return a.fase == name;}).map(function(a) {return a.idddl;})[0],
+		ddlGroup = [];
+	
+	if(idDdl) {
+		ddlGroup = data.ddl.filter(function(a) {return a.idddl == idDdl;});
+		ddlGroup = ddlGroup.map($.proxy(normalizeCommissioni, this, data.commissioni));
+		if(ddlGroup.length) {
+			initIter(ddlGroup);
+		}
+	}
+}
+
+function initSelectionData() {
+	var dataUrl = "json/dataset.json";
+	
+	$.getJSON(dataUrl, function(data) {
+		var dataset = [], table;
+
+		$.each(data.ddl, function(index, ddl) {
+			dataset.push([ddl.fase, ddl.titolo, ddl.dataStato]);
+		});
+
+		$('#selectData').html( '<h3>Seleziona un elemento per visualizzare il procedimento legislativo</h3><table cellpadding="0" cellspacing="0" border="0" class="table table-striped table-bordered" id="selectTable"></table>' );
+ 
+		table = $('#selectTable').dataTable( {
+			"data": dataset,
+			"language": {
+                "url": "json/dataTables.italian.json"
+            },
+			"bLengthChange": false,
+			"iDisplayLength": 15	,
+			"columns": [
+				{ "title": "Numero" },
+				{ "title": "Titolo" },
+				{ "title": "Data" }
+			],
+			"order": [[ 2, "desc" ]],
+			"aoColumnDefs": [
+			  { "sWidth": "80px", "aTargets": [ 2 ] }
+			],
+			"fnInitComplete": function(oSettings, json) {
+				$(".loader").fadeOut();
+				$("#selectData").fadeIn();
+			},
+			"fnDrawCallback": function(){
+				  $('#selectTable td').bind('mouseenter', function () { $(this).parent().children().each(function(){$(this).addClass('highlight');}); });
+				  $('#selectTable td').bind('mouseleave', function () { $(this).parent().children().each(function(){$(this).removeClass('highlight');}); });
+			}
+		} );
+		
+		$('#selectTable tbody').on( 'click', 'tr', function () {
+			prepareData(table.fnGetData(this)[0], data);
+		});
+	});
+}
+
+$(function() {
+	$("#iterVisualization").hide();
+	$("#selectData").hide();
+	$(".loader").center();
+	initSelectionData();
 });

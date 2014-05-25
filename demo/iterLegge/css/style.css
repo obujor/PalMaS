@@ -329,3 +329,67 @@ marker#arrow {
 	background: url("../images/senato.jpg") white no-repeat center !important;
 	background-size: 16px !important;
 }
+
+ 
+.loader {
+	/* Size and position */
+    font-size: 100px; /* 1em */
+	width: 1em;
+    height: 1em;
+    /* Styles */
+    border-radius: 50%;
+    background: #5CB85C; /* Fallback */
+    background:
+        linear-gradient(#9A1818 50%, #4373A2 50%), /* First column */
+        linear-gradient(#9A1818 50%, #4373A2 50%); /* Second column */
+    background-position: 
+    	0 0,    /* Position of 1st column */
+    	100% 0; /* Position of 2nd column */
+    background-size: 50% 100%; /* Contraction of "50% 100%, 50% 100%" */
+    background-repeat: no-repeat;
+    box-shadow: 
+    	inset 0 0 0 .12em rgba(0,0,0,0.1), /* Inner border */
+    	0 0 0 .1em rgba(92,184,92,0.8); /* Outter border */
+    opacity: 0.9;
+    -webkit-animation: mask 3s infinite alternate;
+    animation: mask 3s infinite alternate;
+}
+
+
+
+.loader:after {
+    /* Size */
+    content: "";
+    width: 50%;
+    height: 50%;
+
+    /* Perfect centering */
+    position: absolute;
+    top: 25%;
+    left: 25%;
+
+    /* Styles */
+    border: .12em solid rgba(255,255,255,0.1);
+    border-radius: inherit;
+}
+
+
+.highlight {
+    background-color: #5CB85C !important;
+}
+
+@-webkit-keyframes mask {
+    0% { }
+    25%  { -webkit-transform: rotate(270deg); }
+    50%  { -webkit-transform: rotate( 90deg); }
+    75%  { -webkit-transform: rotate(360deg); }
+    100% { -webkit-transform: rotate(180deg); }
+}
+
+@keyframes mask {
+    0% { }
+    25%  { -webkit-transform: rotate(270deg); transform: rotate(270deg); }
+    50%  { -webkit-transform: rotate( 90deg); transform: rotate( 90deg); }
+    75%  { -webkit-transform: rotate(360deg); transform: rotate(360deg); }
+    100% { -webkit-transform: rotate(180deg); transform: rotate(180deg); }
+}
