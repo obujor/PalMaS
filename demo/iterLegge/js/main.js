@@ -142,7 +142,7 @@ function actionMiniStep(ddl, date, stepIndex) {
         legend = $(container+ " #"+date),
         parentId = $("#cms_"+ddl.idfase).parents("fieldset").attr("id");
     legend.toggleClass("active");
-    $("#cms_"+ddl.idfase).addClass("active");
+    $("#btn_"+ddl.idfase).addClass("active");
     $("#"+parentId+ " legend").addClass("active");
     maybeShowCenterArrow(ddl, stepIndex);
     return container+ " #"+date;
