@@ -18,6 +18,7 @@
 
 .node text {
   font-size: 0.8em;
+  font-weight: bold;
   pointer-events: none;
   text-shadow: 0 1px 0 #fff;
 }
@@ -78,11 +79,12 @@ d3.json("assorbito_17leg.json", function(energy) {
     .enter().append("path")
       .attr("class", "link")
       .attr("d", path)
+      .style("stroke", function(d){return (d.tipo=="iter")?"#000":"#F00";})
       .style("stroke-width", function(d) { return Math.max(1, d.dy); })
       .sort(function(a, b) { return b.dy - a.dy; });
 
   link.append("title")
-      .text(function(d) { return d.source.name + " → " + d.target.name + "\n" + format(d.value); });
+  .text(function(d) { return d.source.name + " -> " + d.target.name + "\n" + d.tipo; });
 
   var node = svg.append("g").selectAll(".node")
       .data(energy.nodes)
@@ -100,7 +102,7 @@ d3.json("assorbito_17leg.json", function(energy) {
       .style("fill", function(d) { return d.color = color(d.name.replace(/ .*/, "")); })
       .style("stroke", function(d) { return d3.rgb(d.color).darker(2); })
     .append("title")
-      .text(function(d) { return d.name + "\n" + format(d.value); });
+      .text(function(d) { return d.name + "\n" + d.titolo + "\n Stato: " + d.stato + " ("+d.dataStato+")\n Presentato il: " + d.dataPresentazione ; });
 
   node.append("text")
       .attr("x", -6)
