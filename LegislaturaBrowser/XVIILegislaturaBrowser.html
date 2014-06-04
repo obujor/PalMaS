@@ -47,6 +47,23 @@ function loadChart() {
                 selectType: "Single",
                 textFilter: 'about'
             }, {
+                facetTitle: "Fiducia",
+                catItemMap : function(vote){ return vote.data[votazioniCols['fiducia']]?"Si":"No"; },
+                sortingFuncs: [{
+                    no_resort: true,
+                    func: kshf.sortFunc_Column_ParseInt_Decr
+                    }],
+                forceSearch: false
+            }, {
+                facetTitle: "Votanti",
+                catItemMap : function(vote){ return Math.floor(vote.data[votazioniCols['votanti']]/100)*100; },
+                catLabelText: function(d) { return (+d.data[1])+"-"+(+d.data[1]+99);  },
+                sortingFuncs: [{
+                    no_resort: true,
+                    func: kshf.sortFunc_Column_ParseInt_Decr
+                    }],
+                forceSearch: false
+            }, {
                 facetTitle: "Favorevoli",
                 catItemMap : function(vote){ return Math.floor(vote.data[votazioniCols['favorevoli']]/100)*100; },
                 catLabelText: function(d) { return (+d.data[1])+"-"+(+d.data[1]+99);  },
@@ -66,7 +83,7 @@ function loadChart() {
                 forceSearch: false
             },{
                 facetTitle: "Astenuti",
-                catItemMap : function(vote){ return Math.floor(vote.data[votazioniCols['astenuti']]/10)*10; },
+                catItemMap : function(vote){ return Math.floor(vote.data[votazioniCols['astenuti']]/100)*100; },
                 catLabelText: function(d) { return (+d.data[1])+"-"+(+d.data[1]+9);  },
                 sortingFuncs: [{
                     no_resort: true,
